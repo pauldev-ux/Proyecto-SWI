@@ -1,0 +1,88 @@
+<div class="politicas-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Políticas de Negocio</h1>
+      <p class="subtitle">Gestiona y monitorea las políticas de tu organización</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary btn-lg" routerLink="/politicas/crear">
+        <span>➕</span> Crear Nueva Política
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-spinner" *ngIf="cargando">
+    <div class="spinner"></div>
+    <p>Cargando políticas...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state-container" *ngIf="!cargando && politicas.length === 0">
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <h2>No hay políticas creadas</h2>
+      <p>Comienza creando una nueva política para tu organización</p>
+      <button class="btn btn-primary" routerLink="/politicas/crear">
+        + Crear Primera Política
+      </button>
+    </div>
+  </div>
+
+  <!-- Políticas List -->
+  <div class="politicas-content" *ngIf="!cargando && politicas.length > 0">
+    <div class="card">
+      <div class="card-header">
+        <h2>Listado de Políticas ({{ politicas.length }})</h2>
+        <div class="filter-actions">
+          <input type="text" class="search-input" placeholder="🔍 Buscar políticas..." />
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>NOMBRE</th>
+              <th>DESCRIPCIÓN</th>
+              <th>ESTADO</th>
+              <th>CREADA</th>
+              <th class="actions-column">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let politica of politicas">
+              <td class="nombre-cell">
+                <strong>{{ politica.nombre }}</strong>
+              </td>
+              <td class="descripcion-cell">
+                {{ (politica.descripcion || '') | slice:0:50 }}{{ (politica.descripcion?.length || 0) > 50 ? '...' : '' }}
+              </td>
+              <td>
+                <span [ngClass]="'badge badge-' + (politica.estado || 'draft')">
+                  {{ politica.estado || 'BORRADOR' }}
+                </span>
+              </td>
+              <td class="fecha-cell">
+                {{ politica.fecha_creacion ? (politica.fecha_creacion | date:'short') : 'N/A' }}
+              </td>
+              <td class="actions-cell">
+                <button class="btn-action-table btn-info" [routerLink]="['/politicas', politica.id]" 
+                        title="Ver detalles">
+                  👁️ Ver
+                </button>
+                <button class="btn-action-table btn-edit" title="Editar política">
+                  ✏️ Editar
+                </button>
+                <button class="btn-action-table btn-delete" title="Eliminar política">
+                  🗑️ Eliminar
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

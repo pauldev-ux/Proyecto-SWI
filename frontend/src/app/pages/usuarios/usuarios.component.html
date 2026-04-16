@@ -1,0 +1,186 @@
+<div class="usuarios-container">
+  <!-- Header -->
+  <div class="usuarios-header">
+    <div class="header-title">
+      <h1>Gestión de Usuarios</h1>
+      <p class="subtitle">Administra usuarios del sistema</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="abrirFormularioCrear()" [disabled]="cargando">
+        ✨ Crear Usuario
+      </button>
+      <button class="btn-refresh" (click)="cargarUsuarios()" [disabled]="cargando">
+        🔄
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert -->
+  <div *ngIf="error" class="alert alert-error">
+    {{ error }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="cargando && usuarios.length === 0" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando usuarios...</p>
+  </div>
+
+  <!-- Usuarios Table -->
+  <div *ngIf="!cargando || usuarios.length > 0" class="card">
+    <div class="card-header">
+      <h2>Usuarios Registrados</h2>
+      <span class="count-badge">{{ usuarios.length }} usuarios</span>
+    </div>
+
+    <div *ngIf="usuarios.length === 0" class="empty-state">
+      <p>No hay usuarios registrados</p>
+    </div>
+
+    <div *ngIf="usuarios.length > 0" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Nombre</th>
+            <th>Rol</th>
+            <th>Departamento</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuarios">
+            <td class="username">{{ usuario.username }}</td>
+            <td>{{ usuario.nombre }}</td>
+            <td>
+              <span class="badge" [style.background-color]="obtenerColorRol(usuario.rol)">
+                {{ obtenerRolLabel(usuario.rol) }}
+              </span>
+            </td>
+            <td>{{ usuario.departamento || '-' }}</td>
+            <td>
+              <span [class.activo]="usuario.activo" [class.inactivo]="!usuario.activo" class="status-badge">
+                {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="acciones">
+              <button class="btn-edit" (click)="abrirFormularioEditar(usuario)" [disabled]="cargando" title="Editar">
+                ✏️
+              </button>
+              <button class="btn-delete" (click)="abrirConfirmacionEliminar(usuario)" [disabled]="cargando" title="Eliminar">
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal - Formulario -->
+  <div *ngIf="mostrarFormulario" class="modal-overlay" (click)="cerrarFormulario()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editandoId ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}</h2>
+        <button class="btn-close" (click)="cerrarFormulario()">✕</button>
+      </div>
+
+      <div *ngIf="error" class="alert alert-error alert-in-modal">
+        {{ error }}
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            [(ngModel)]="formulario.username"
+            placeholder="Nombre de usuario"
+            [readonly]="!!editandoId"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="nombre">Nombre Completo</label>
+          <input 
+            type="text" 
+            id="nombre" 
+            [(ngModel)]="formulario.nombre"
+            placeholder="Nombre del usuario"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group" *ngIf="!editandoId">
+          <label for="contrasena">Contraseña</label>
+          <input 
+            type="password" 
+            id="contrasena" 
+            [(ngModel)]="formulario.contrasena"
+            placeholder="Contraseña (mín. 6 caracteres)"
+            class="form-input"
+          />
+          <small class="form-hint">La contraseña no puede ser editada después de crear el usuario</small>
+        </div>
+
+        <div class="form-group">
+          <label for="rol">Rol</label>
+          <select id="rol" [(ngModel)]="formulario.rol" class="form-input">
+            <option value="funcionario">Funcionario</option>
+            <option value="diseñador">Diseñador</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="departamento">Departamento</label>
+          <input 
+            type="text" 
+            id="departamento" 
+            [(ngModel)]="formulario.departamento"
+            placeholder="Departamento (opcional)"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarFormulario()" [disabled]="cargando">
+          Cancelar
+        </button>
+        <button class="btn-primary" (click)="guardarUsuario()" [disabled]="cargando">
+          {{ cargando ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal - Confirmación Eliminar -->
+  <div *ngIf="mostrarConfirmacion" class="modal-overlay" (click)="cerrarConfirmacion()">
+    <div class="modal-content modal-alert" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Eliminar Usuario</h2>
+        <button class="btn-close" (click)="cerrarConfirmacion()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="confirm-message">
+          ¿Está seguro de que desea eliminar el usuario <strong>{{ usuarioAEliminar?.username }}</strong>?
+        </p>
+        <p class="confirm-warning">Esta acción no se puede deshacer.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarConfirmacion()" [disabled]="cargando">
+          Cancelar
+        </button>
+        <button class="btn-danger" (click)="confirmarEliminar()" [disabled]="cargando">
+          {{ cargando ? 'Eliminando...' : 'Eliminar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,180 @@
+<div class="login-container">
+  <div class="login-content">
+    <div class="login-box">
+      <!-- Logo y Título -->
+      <div class="login-header">
+        <div class="logo-large">⚡</div>
+        <h1 class="app-title">WorkflowSW1</h1>
+        <p class="app-subtitle">Sistema de Gestión de Políticas de Negocio</p>
+      </div>
+
+      <!-- Mensajes de Error o Éxito -->
+      <div *ngIf="error" class="alert alert-error">
+        <span class="alert-icon">❌</span>
+        <span>{{ error }}</span>
+      </div>
+
+      <!-- FORMULARIO DE LOGIN -->
+      <ng-container *ngIf="!mostrarRegistro">
+        <form [formGroup]="formularioLogin" (ngSubmit)="ingresar()" class="login-form">
+          <div class="form-group">
+            <label for="username">Usuario</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👤</span>
+              <input 
+                type="text" 
+                id="username" 
+                formControlName="username"
+                placeholder="Tu nombre de usuario"
+                class="form-input"
+              >
+            </div>
+            <small class="error-text" *ngIf="formularioLogin.get('username')?.invalid && formularioLogin.get('username')?.touched">
+              Mínimo 3 caracteres
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="contraseña">Contraseña</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="contraseña" 
+                formControlName="contraseña"
+                placeholder="Tu contraseña"
+                class="form-input"
+              >
+            </div>
+            <small class="error-text" *ngIf="formularioLogin.get('contraseña')?.invalid && formularioLogin.get('contraseña')?.touched">
+              Mínimo 6 caracteres
+            </small>
+          </div>
+
+          <button 
+            type="submit" 
+            class="btn-login"
+            [disabled]="cargando"
+          >
+            <span *ngIf="!cargando">Ingresar</span>
+            <span *ngIf="cargando">
+              <span class="spinner"></span>
+              Ingresando...
+            </span>
+          </button>
+        </form>
+
+        <!-- Link a Registro -->
+        <div class="auth-toggle">
+          <p>¿No tienes cuenta? 
+            <button type="button" class="link-btn" (click)="cambiarModo()">Regístrate aquí</button>
+          </p>
+        </div>
+
+        <!-- Datos de Prueba -->
+        <div class="demo-info">
+          <p><strong>Demo:</strong> testuser / password123</p>
+        </div>
+      </ng-container>
+
+      <!-- FORMULARIO DE REGISTRO -->
+      <ng-container *ngIf="mostrarRegistro">
+        <form [formGroup]="formularioRegistro" (ngSubmit)="registrarse()" class="login-form">
+          <div class="form-group">
+            <label for="nombre">Nombre Completo</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👥</span>
+              <input 
+                type="text" 
+                id="nombre" 
+                formControlName="nombre"
+                placeholder="Tu nombre completo"
+                class="form-input"
+              >
+            </div>
+            <small class="error-text" *ngIf="formularioRegistro.get('nombre')?.invalid && formularioRegistro.get('nombre')?.touched">
+              El nombre es requerido
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="username-reg">Usuario</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👤</span>
+              <input 
+                type="text" 
+                id="username-reg" 
+                formControlName="username"
+                placeholder="Nombre de usuario (3-50 caracteres)"
+                class="form-input"
+              >
+            </div>
+            <small class="error-text" *ngIf="formularioRegistro.get('username')?.invalid && formularioRegistro.get('username')?.touched">
+              El usuario debe tener entre 3 y 50 caracteres
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="contraseña-reg">Contraseña</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="contraseña-reg" 
+                formControlName="contraseña"
+                placeholder="Mínimo 6 caracteres"
+                class="form-input"
+              >
+            </div>
+            <small class="error-text" *ngIf="formularioRegistro.get('contraseña')?.invalid && formularioRegistro.get('contraseña')?.touched">
+              Mínimo 6 caracteres
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmar">Confirmar Contraseña</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="confirmar" 
+                formControlName="confirmarContraseña"
+                placeholder="Confirma tu contraseña"
+                class="form-input"
+              >
+            </div>
+            <small class="error-text" *ngIf="formularioRegistro.get('confirmarContraseña')?.invalid && formularioRegistro.get('confirmarContraseña')?.touched">
+              Confirmar contraseña es requerido
+            </small>
+          </div>
+
+          <button 
+            type="submit" 
+            class="btn-login"
+            [disabled]="cargando"
+          >
+            <span *ngIf="!cargando">Crear Cuenta</span>
+            <span *ngIf="cargando">
+              <span class="spinner"></span>
+              Registrando...
+            </span>
+          </button>
+        </form>
+
+        <!-- Link a Login -->
+        <div class="auth-toggle">
+          <p>¿Ya tienes cuenta? 
+            <button type="button" class="link-btn" (click)="cambiarModo()">Inicia sesión aquí</button>
+          </p>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Decoración -->
+    <div class="login-decoration">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+    </div>
+  </div>
+</div>

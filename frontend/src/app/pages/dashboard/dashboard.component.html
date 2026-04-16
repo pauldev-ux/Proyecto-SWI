@@ -1,0 +1,170 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <div class="header-title">
+      <h1>Dashboard</h1>
+      <p class="subtitle" *ngIf="usuarioActual">Bienvenido, {{ usuarioActual.nombre }}</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-refresh" (click)="cargarEstadisticas()" [disabled]="cargando" title="Actualizar">
+        🔄
+      </button>
+    </div>
+  </div>
+
+  <!-- Mensaje de Error -->
+  <div *ngIf="error" class="alert alert-error">
+    <span>⚠️ {{ error }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="cargando" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando estadísticas...</p>
+  </div>
+
+  <!-- KPI Cards -->
+  <div *ngIf="!cargando && estadisticas" class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #3498db;">{{ estadisticas.estadoGeneral.totalTramites }}</div>
+      <div class="kpi-label">Total Trámites</div>
+      <div class="kpi-trend">📊 Gestión integral</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #f39c12;">{{ estadisticas.tramitesPorEstado['en_proceso'] || 0 }}</div>
+      <div class="kpi-label">En Progreso</div>
+      <div class="kpi-trend">⚙️ En ejecución</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #27ae60;">{{ estadisticas.tramitesPorEstado['completado'] || 0 }}</div>
+      <div class="kpi-label">Completados</div>
+      <div class="kpi-trend">✅ Finalizados</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-value" style="color: #e74c3c;">{{ estadisticas.tramitesPorEstado['rechazado'] || 0 }}</div>
+      <div class="kpi-label">Rechazados</div>
+      <div class="kpi-trend">❌ Denegados</div>
+    </div>
+  </div>
+
+  <!-- Content Section -->
+  <div class="content-section" *ngIf="!cargando && estadisticas">
+    <!-- Estados Row -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-title">Departamentos Activos</div>
+        <div class="stat-number">{{ estadisticas.estadoGeneral.departamentosActivos }}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-title">Usuarios Registrados</div>
+        <div class="stat-number">{{ estadisticas.estadoGeneral.usuariosTotales }}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-title">Trámites Este Mes</div>
+        <div class="stat-number">{{ estadisticas.estadoGeneral.tramitesEsteMes }}</div>
+      </div>
+    </div>
+
+    <!-- Trámites por Estado -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Distribución de Estados</h2>
+      </div>
+      
+      <div class="estado-grid">
+        <div *ngFor="let estado of estadisticas.tramitesPorEstado | keyvalue" class="estado-item">
+          <div class="estado-label">{{ estado.key | titlecase }}</div>
+          <div class="estado-bar">
+            <div class="progress-bar" 
+              [style.width.%]="(estado.value / estadisticas.estadoGeneral.totalTramites * 100) || 0"
+              [style.background-color]="obtenerColorEstado(estado.key)">
+            </div>
+          </div>
+          <div class="estado-count">{{ estado.value }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trámites por Departamento -->
+    <div class="card" *ngIf="estadisticas.tramitesPorDepartamento.length > 0">
+      <div class="card-header">
+        <h2>Trámites por Departamento</h2>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>DEPARTAMENTO</th>
+              <th>CANTIDAD</th>
+              <th>PORCENTAJE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dept of estadisticas.tramitesPorDepartamento">
+              <td>{{ dept.departamento }}</td>
+              <td class="cantidad">
+                <strong>{{ dept.cantidad }}</strong>
+              </td>
+              <td class="porcentaje">
+                <div class="progress-mini">
+                  <div class="progress-bar-mini" 
+                    [style.width.%]="(dept.cantidad / estadisticas.estadoGeneral.totalTramites * 100) || 0"
+                    style="background-color: #3498db;">
+                  </div>
+                </div>
+                {{ ((dept.cantidad / estadisticas.estadoGeneral.totalTramites) * 100 | number:'1.0-0') }}%
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Últimos Trámites -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Últimos Trámites</h2>
+      </div>
+      
+      <div class="table-responsive" *ngIf="estadisticas.ultimosTramites.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>REFERENCIA</th>
+              <th>CLIENTE</th>
+              <th>ESTADO</th>
+              <th>PRIORIDAD</th>
+              <th>CREADO</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tramite of estadisticas.ultimosTramites">
+              <td class="referencia">
+                <strong>{{ tramite.referencia }}</strong>
+              </td>
+              <td>{{ tramite.cliente }}</td>
+              <td>
+                <span class="badge" [style.background-color]="obtenerColorEstado(tramite.estado)">
+                  {{ tramite.estado | titlecase }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [style.background-color]="obtenerColorPrioridad(tramite.prioridad)">
+                  {{ tramite.prioridad | titlecase }}
+                </span>
+              </td>
+              <td class="fecha">
+                {{ tramite.fechaCreacion ? (tramite.fechaCreacion | date:'short') : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" *ngIf="estadisticas.ultimosTramites.length === 0">
+        <p>📋 No hay trámites registrados</p>
+      </div>
+    </div>
+  </div>
+</div>

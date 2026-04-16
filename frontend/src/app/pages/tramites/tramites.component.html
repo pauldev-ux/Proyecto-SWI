@@ -1,0 +1,277 @@
+<div class="tramites-container">
+  <!-- Header -->
+  <div class="tramites-header">
+    <h1>📋 Gestión de Trámites</h1>
+    <button class="btn-primary" (click)="abrirFormulario()" *ngIf="!mostrarFormulario">
+      ➕ Nuevo Trámite
+    </button>
+  </div>
+
+  <!-- Mensajes -->
+  <div *ngIf="error" class="alert alert-error" (click)="limpiarMensajes()">
+    <span class="alert-icon">❌</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="exito" class="alert alert-success" (click)="limpiarMensajes()">
+    <span class="alert-icon">✅</span>
+    <span>{{ exito }}</span>
+  </div>
+
+  <!-- Formulario -->
+  <div *ngIf="mostrarFormulario" class="card form-card">
+    <div class="card-header">
+      <h3>{{ editando ? '✏️ Editar Trámite' : '➕ Crear Trámite' }}</h3>
+      <button class="btn-close" (click)="cerrarFormulario()">✕</button>
+    </div>
+
+    <form [formGroup]="formulario" (ngSubmit)="guardar()" class="form">
+      <div class="form-group">
+        <label for="referencia">Referencia *</label>
+        <input 
+          type="text" 
+          id="referencia" 
+          formControlName="referencia"
+          placeholder="Ej: TRM-2024-001"
+          class="form-input"
+        >
+        <small class="error-text" *ngIf="formulario.get('referencia')?.invalid && formulario.get('referencia')?.touched">
+          La referencia es requerida
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="cliente">Cliente *</label>
+        <input 
+          type="text" 
+          id="cliente" 
+          formControlName="cliente"
+          placeholder="Nombre del cliente"
+          class="form-input"
+        >
+        <small class="error-text" *ngIf="formulario.get('cliente')?.invalid && formulario.get('cliente')?.touched">
+          El cliente es requerido
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="asunto">Asunto *</label>
+        <textarea 
+          id="asunto" 
+          formControlName="asunto"
+          placeholder="Descripción del trámite"
+          class="form-input"
+          rows="3"
+        ></textarea>
+        <small class="error-text" *ngIf="formulario.get('asunto')?.invalid && formulario.get('asunto')?.touched">
+          El asunto es requerido
+        </small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="departamento">Departamento</label>
+          <select 
+            id="departamento" 
+            formControlName="departamento"
+            class="form-input"
+          >
+            <option value="">— Seleccionar —</option>
+            <option *ngFor="let dept of departamentos" [value]="dept.nombre">
+              {{ dept.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="prioridad">Prioridad *</label>
+          <select 
+            id="prioridad" 
+            formControlName="prioridad"
+            class="form-input"
+          >
+            <option *ngFor="let p of prioridades" [value]="p">
+              {{ p | titlecase }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="usuario_asignado">Usuario Asignado</label>
+        <input 
+          type="text" 
+          id="usuario_asignado" 
+          formControlName="usuario_asignado"
+          placeholder="Nombre de usuario"
+          class="form-input"
+        >
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" [disabled]="cargando">
+          <span *ngIf="!cargando">{{ editando ? '💾 Actualizar' : '➕ Crear' }}</span>
+          <span *ngIf="cargando">
+            <span class="spinner"></span>
+            {{ editando ? 'Actualizando...' : 'Creando...' }}
+          </span>
+        </button>
+        <button type="button" class="btn-secondary" (click)="cerrarFormulario()" [disabled]="cargando">
+          ❌ Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Filtros y Búsqueda -->
+  <div class="search-section" *ngIf="!mostrarFormulario">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        [(ngModel)]="busqueda"
+        placeholder="Buscar por referencia, cliente o asunto..."
+        class="search-input"
+      >
+    </div>
+
+    <button 
+      class="btn-filters"
+      (click)="filtrosAbiertos = !filtrosAbiertos"
+    >
+      ⚙️ Filtros
+    </button>
+  </div>
+
+  <!-- Panel de Filtros -->
+  <div class="filters-panel" *ngIf="!mostrarFormulario && filtrosAbiertos">
+    <div class="filter-group">
+      <label for="filtro-estado">Estados</label>
+      <select 
+        id="filtro-estado" 
+        [(ngModel)]="filtroEstado"
+        class="form-input"
+      >
+        <option value="">— Todos —</option>
+        <option *ngFor="let e of estados" [value]="e">
+          {{ e | titlecase }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button class="btn-primary" (click)="aplicarFiltros()">
+        ✓ Aplicar
+      </button>
+      <button class="btn-secondary" (click)="limpiarFiltros()">
+        🔄 Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de Trámites -->
+  <div class="table-wrapper" *ngIf="!mostrarFormulario">
+    <div *ngIf="cargando" class="loading">
+      <span class="spinner-large"></span>
+      Cargando trámites...
+    </div>
+
+    <div *ngIf="!cargando && filtrarTramites().length === 0" class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>No hay trámites para mostrar</p>
+    </div>
+
+    <table class="tramites-table" *ngIf="!cargando && filtrarTramites().length > 0">
+      <thead>
+        <tr>
+          <th>Referencia</th>
+          <th>Cliente</th>
+          <th>Asunto</th>
+          <th>Departamento</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+          <th>Asignado</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tramite of filtrarTramites()">
+          <td class="referencia-cell">
+            <strong>{{ tramite.referencia }}</strong>
+          </td>
+          <td>{{ tramite.cliente }}</td>
+          <td class="asunto-cell">
+            <span class="asunto-text" [title]="tramite.asunto">{{ tramite.asunto }}</span>
+          </td>
+          <td>
+            <span class="badge badge-department" *ngIf="tramite.departamento">
+              {{ tramite.departamento }}
+            </span>
+            <span class="badge badge-empty" *ngIf="!tramite.departamento">—</span>
+          </td>
+          <td>
+            <span class="badge" [style.background-color]="obtenerColorEstado(tramite.estado)">
+              {{ tramite.estado | titlecase }}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [style.background-color]="obtenerColorPrioridad(tramite.prioridad)">
+              {{ tramite.prioridad | titlecase }}
+            </span>
+          </td>
+          <td>
+            <span class="badge badge-user" *ngIf="tramite.usuario_asignado">
+              {{ tramite.usuario_asignado }}
+            </span>
+            <span class="badge badge-empty" *ngIf="!tramite.usuario_asignado">—</span>
+          </td>
+          <td class="fecha-cell">
+            <small>{{ tramite.fecha_creacion ? (tramite.fecha_creacion | date:'short') : '—' }}</small>
+          </td>
+          <td class="actions-cell">
+            <button 
+              class="btn-action btn-edit" 
+              (click)="editar(tramite)"
+              title="Editar"
+              [disabled]="cargando"
+            >
+              ✏️
+            </button>
+            <div class="dropdown">
+              <button 
+                class="btn-action btn-state" 
+                title="Cambiar Estado"
+                [disabled]="cargando"
+              >
+                🔄
+              </button>
+              <div class="dropdown-content">
+                <button 
+                  *ngFor="let estado of estados"
+                  (click)="cambiarEstado(tramite, estado)" 
+                  [disabled]="tramite.estado === estado || cargando"
+                  class="dropdown-item"
+                >
+                  {{ estado | titlecase }}
+                </button>
+              </div>
+            </div>
+            <button 
+              class="btn-action btn-delete" 
+              (click)="eliminar(tramite.id!)"
+              title="Eliminar"
+              [disabled]="cargando"
+            >
+              🗑️
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="table-footer" *ngIf="!cargando && filtrarTramites().length > 0">
+      <small>Total: {{ filtrarTramites().length }} trámite(s)</small>
+    </div>
+  </div>
+</div>

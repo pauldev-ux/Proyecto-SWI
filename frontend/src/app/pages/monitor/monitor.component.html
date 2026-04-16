@@ -1,0 +1,105 @@
+<div class="monitor-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Monitor en Vivo</h1>
+      <p class="subtitle">Estado actual del sistema y actividades en tiempo real</p>
+    </div>
+    <div class="refresh-indicator">
+      <span class="status-dot"></span>
+      <span class="status-text">En línea</span>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of stats">
+      <div class="stat-header">
+        <span class="stat-icon" [style.color]="stat.color">{{ stat.icon }}</span>
+        <span class="stat-label">{{ stat.label }}</span>
+      </div>
+      <div class="stat-value" [style.color]="stat.color">{{ stat.value }}</div>
+      <div class="stat-footer">{{ stat.trend }}</div>
+    </div>
+  </div>
+
+  <!-- Health Status and Activities -->
+  <div class="content-grid">
+    <!-- System Health Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Salud del Sistema</h2>
+        <span class="refresh-badge">Actualizado: Ahora</span>
+      </div>
+
+      <div class="health-metrics">
+        <div class="metric">
+          <div class="metric-header">
+            <label class="metric-label">CPU</label>
+            <span class="metric-value">{{ systemHealth.cpu }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width]="systemHealth.cpu + '%'" 
+                 [style.backgroundColor]="getHealthColor(systemHealth.cpu)"></div>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-header">
+            <label class="metric-label">Memoria</label>
+            <span class="metric-value">{{ systemHealth.memoria }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width]="systemHealth.memoria + '%'" 
+                 [style.backgroundColor]="getHealthColor(systemHealth.memoria)"></div>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-header">
+            <label class="metric-label">Base de Datos</label>
+            <span class="metric-value">{{ systemHealth.database }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width]="systemHealth.database + '%'" 
+                 [style.backgroundColor]="getHealthColor(systemHealth.database)"></div>
+          </div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-header">
+            <label class="metric-label">API</label>
+            <span class="metric-value">{{ systemHealth.api }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width]="systemHealth.api + '%'" 
+                 [style.backgroundColor]="getHealthColor(systemHealth.api)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activities Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Actividades Recientes</h2>
+        <button class="btn-small btn-filter">Filtrar</button>
+      </div>
+
+      <div class="activities-list">
+        <div class="activity-item" *ngFor="let activity of recentActivities">
+          <div class="activity-badge" [ngClass]="getActivityTypeClass(activity.tipo)">
+            {{ activity.tipo.charAt(0) }}
+          </div>
+          <div class="activity-content">
+            <p class="activity-description">{{ activity.descripcion }}</p>
+            <div class="activity-meta">
+              <span class="activity-user">{{ activity.usuario }}</span>
+              <span class="activity-time">{{ activity.tiempo }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

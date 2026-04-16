@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: politicas_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: politicas_negocio_db
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - politicas_network
+
+  # Backend FastAPI (descomenta para usar Docker)
+  # backend:
+  #   build: ./backend
+  #   container_name: politicas_backend
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     MONGODB_URL: mongodb://mongodb:27017
+  #     MONGODB_NAME: politicas_negocio_db
+  #   depends_on:
+  #     - mongodb
+  #   networks:
+  #     - politicas_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  politicas_network:
+    driver: bridge

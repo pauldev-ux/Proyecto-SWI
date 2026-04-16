@@ -1,0 +1,74 @@
+<ng-container *ngIf="!estaAutenticado()">
+  <router-outlet></router-outlet>
+</ng-container>
+
+<ng-container *ngIf="estaAutenticado()">
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" [class.cerrado]="!sidebarAbierto">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-text" *ngIf="sidebarAbierto">{{ title }}</span>
+        </div>
+        <button class="toggle-btn" (click)="toggleSidebar()">
+          {{ sidebarAbierto ? '❮' : '❯' }}
+        </button>
+      </div>
+
+      <nav class="sidebar-menu">
+        <div class="menu-section">
+          <p class="section-title" *ngIf="sidebarAbierto">PRINCIPAL</p>
+          <a routerLink="/dashboard" routerLinkActive="active" class="menu-item">
+            <span class="menu-icon">📊</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Dashboard</span>
+          </a>
+          <a routerLink="/monitor" routerLinkActive="active" class="menu-item">
+            <span class="menu-icon">📡</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Monitor en Vivo</span>
+          </a>
+          <a href="#" class="menu-item">
+            <span class="menu-icon">📈</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Analytics</span>
+          </a>
+          <a routerLink="/departamentos" routerLinkActive="active" class="menu-item">
+            <span class="menu-icon">🏢</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Departamentos</span>
+          </a>
+        </div>
+
+        <div class="menu-section">
+          <p class="section-title" *ngIf="sidebarAbierto">GESTIÓN</p>
+          <a routerLink="/politicas" routerLinkActive="active" class="menu-item">
+            <span class="menu-icon">📋</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Políticas</span>
+          </a>
+          <a routerLink="/tramites" routerLinkActive="active" class="menu-item">
+            <span class="menu-icon">📝</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Trámites</span>
+          </a>
+          <a routerLink="/usuarios" routerLinkActive="active" class="menu-item">
+            <span class="menu-icon">👥</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Usuarios</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer" *ngIf="sidebarAbierto">
+        <div class="user-info">
+          <div class="user-avatar">{{ (usuarioActual?.nombre || '').charAt(0).toUpperCase() }}</div>
+          <div class="user-details">
+            <p class="user-name">{{ usuarioActual?.nombre }}</p>
+            <p class="user-role">{{ usuarioActual?.rol }}</p>
+          </div>
+        </div>
+        <button class="logout-btn" (click)="logout()">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</ng-container>
