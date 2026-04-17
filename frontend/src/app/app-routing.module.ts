@@ -16,6 +16,11 @@ const routes: Routes = [
     canActivate: [AuthGuard]
   },
   { 
+    path: 'analytics', 
+    loadChildren: () => import('./pages/analytics/analytics.module').then(m => m.AnalyticsModule),
+    canActivate: [AuthGuard]
+  },
+  { 
     path: 'politicas', 
     loadChildren: () => import('./pages/politicas/politicas.module').then(m => m.PoliticasModule),
     canActivate: [AuthGuard]
