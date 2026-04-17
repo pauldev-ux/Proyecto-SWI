@@ -2,239 +2,197 @@
   <!-- Header -->
   <div class="analytics-header">
     <div class="header-title">
-      <h1>📊 Analytics & Flujos de Trabajo</h1>
-      <p class="subtitle">Visualización de procesos y trámites entre departamentos</p>
+      <h1>📊 Editor Interactivo de Diagramas</h1>
+      <p class="subtitle">Arrastra nodos, edita actividades, y crea conexiones entre departamentos</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-action btn-primary" (click)="agregarNodo()" title="Agregar nueva actividad">
+        ➕ Nodo
+      </button>
+      <button class="btn-action btn-secondary" (click)="agregarConexion()" title="Crear conexión entre nodos">
+        🔗 Conexión
+      </button>
+      <button class="btn-action btn-warning" (click)="exportarJSON()" title="Descargar diagrama en JSON">
+        💾 Exportar
+      </button>
+      <button class="btn-action btn-danger" (click)="limpiarDiagrama()" title="Borrar todo">
+        🗑️ Limpiar
+      </button>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs-container">
-    <button class="tab-btn active" (click)="activeTab = 'swimlane'">
-      🏊 Diagrama de Swimlanes
-    </button>
-    <button class="tab-btn" (click)="activeTab = 'timeline'">
-      📅 Línea de Tiempo
-    </button>
-    <button class="tab-btn" (click)="activeTab = 'estadisticas'">
-      📈 Estadísticas
-    </button>
+  <!-- Canvas Editor -->
+  <div class="editor-container">
+    <canvas #canvas class="canvas-editor" width="1000" height="600"></canvas>
+    
+    <!-- Instructions -->
+    <div class="instructions">
+      <span>🖱️ Arrastra nodos • 🖱️🖱️ Doble-clic para editar • ❌ Selecciona y presiona DEL para eliminar</span>
+    </div>
   </div>
 
-  <!-- Swimlane Diagram Tab -->
-  <div *ngIf="activeTab === 'swimlane'" class="tab-content">
-    <div class="swimlane-card">
-      <div class="card-header">
-        <h2>Flujo de Trámite Internal - Modelo de Swimlanes</h2>
-        <p class="card-subtitle">Cada carril representa un departamento. Las actividades se ejecutan dentro del carril correspondiente.</p>
+  <!-- Nodo Seleccionado Panel -->
+  <div *ngIf="nodoSeleccionado" class="selected-panel">
+    <div class="panel-header">
+      <h3>📌 Nodo Seleccionado</h3>
+      <button class="btn-close" (click)="nodoSeleccionado = null">✕</button>
+    </div>
+    <div class="panel-content">
+      <div class="info-row">
+        <label>Nombre:</label>
+        <span>{{ nodoSeleccionado.nombre }}</span>
       </div>
-
-      <div class="swimlane-diagram">
-        <!-- Carril 1: Ventas -->
-        <div class="swimlane">
-          <div class="swimlane-header" style="background-color: #e3f2fd; border-left: 4px solid #2196F3;">
-            <span class="dept-icon">🏪</span>
-            <span class="dept-name">DEPARTAMENTO: VENTAS</span>
-          </div>
-          <div class="swimlane-content">
-            <div class="activity" style="background-color: #2196F3; color: white;">
-              <div class="activity-icon">📋</div>
-              <div class="activity-title">Recibir Solicitud</div>
-              <div class="activity-desc">Cliente presenta solicitud de trámite</div>
-              <div class="activity-time">Tiempo: 1-2 días</div>
-            </div>
-            <div class="connector-down"></div>
-          </div>
-        </div>
-
-        <!-- Carril 2: Legal -->
-        <div class="swimlane">
-          <div class="swimlane-header" style="background-color: #fff3e0; border-left: 4px solid #FF9800;">
-            <span class="dept-icon">⚖️</span>
-            <span class="dept-name">DEPARTAMENTO: LEGAL</span>
-          </div>
-          <div class="swimlane-content">
-            <div class="activity" style="background-color: #FF9800; color: white;">
-              <div class="activity-icon">📋</div>
-              <div class="activity-title">Revisar Documentos</div>
-              <div class="activity-desc">Verificación legal de documentos</div>
-              <div class="activity-time">Tiempo: 3-5 días</div>
-            </div>
-            <div class="connector-down"></div>
-            <div class="decision" style="background-color: #FF9800; color: white;">
-              <div class="decision-text">¿Documentos<br/>Completos?</div>
-            </div>
-            <div class="flow-labels">
-              <span class="label-yes">✓ Sí</span>
-              <span class="label-no">✗ No → Retorno</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Carril 3: Finanzas -->
-        <div class="swimlane">
-          <div class="swimlane-header" style="background-color: #e8f5e9; border-left: 4px solid #4CAF50;">
-            <span class="dept-icon">💰</span>
-            <span class="dept-name">DEPARTAMENTO: FINANZAS</span>
-          </div>
-          <div class="swimlane-content">
-            <div class="activity" style="background-color: #4CAF50; color: white;">
-              <div class="activity-icon">💵</div>
-              <div class="activity-title">Validar Presupuesto</div>
-              <div class="activity-desc">Evaluación de disponibilidad de fondos</div>
-              <div class="activity-time">Tiempo: 2-3 días</div>
-            </div>
-            <div class="connector-down"></div>
-            <div class="activity" style="background-color: #4CAF50; color: white;">
-              <div class="activity-icon">✓</div>
-              <div class="activity-title">Aprobar Pago</div>
-              <div class="activity-desc">Autorización de desembolso</div>
-              <div class="activity-time">Tiempo: 1 día</div>
-            </div>
-            <div class="connector-down"></div>
-          </div>
-        </div>
-
-        <!-- Carril 4: Legal (Aprobación Final) -->
-        <div class="swimlane">
-          <div class="swimlane-header" style="background-color: #fff3e0; border-left: 4px solid #FF9800;">
-            <span class="dept-icon">⚖️</span>
-            <span class="dept-name">DEPARTAMENTO: LEGAL (Final)</span>
-          </div>
-          <div class="swimlane-content">
-            <div class="activity" style="background-color: #FF9800; color: white;">
-              <div class="activity-icon">✓</div>
-              <div class="activity-title">Aprobación Final</div>
-              <div class="activity-desc">Firma y validación final del documento</div>
-              <div class="activity-time">Tiempo: 1 día</div>
-            </div>
-            <div class="connector-down"></div>
-            <div class="activity success" style="background-color: #4CAF50; color: white;">
-              <div class="activity-icon">🎉</div>
-              <div class="activity-title">Trámite Completado</div>
-              <div class="activity-desc">Proceso finalizado exitosamente</div>
-              <div class="activity-time">Total: 7-11 días</div>
-            </div>
-          </div>
-        </div>
+      <div class="info-row">
+        <label>Departamento:</label>
+        <span [style.color]="coloresDept[nodoSeleccionado.departamento]">
+          {{ nodoSeleccionado.departamento }}
+        </span>
       </div>
-
-      <!-- Legend -->
-      <div class="swimlane-legend">
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #2196F3;"></div>
-          <span>Ventas - Inicio del proceso</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #FF9800;"></div>
-          <span>Legal - Revisión y aprobación</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #4CAF50;"></div>
-          <span>Finanzas - Validación y desembolso</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #9E9E9E;"></div>
-          <span>Relación Secuencial (→) o Iterativa (⟲)</span>
-        </div>
+      <div class="info-row">
+        <label>Posición:</label>
+        <span>X: {{ nodoSeleccionado.x | number:'0.0-0' }}, Y: {{ nodoSeleccionado.y | number:'0.0-0' }}</span>
+      </div>
+      <div class="panel-buttons">
+        <button class="btn-edit" (click)="editarNodo()">
+          ✏️ Editar
+        </button>
+        <button class="btn-delete" (click)="eliminarNodo()">
+          🗑️ Eliminar
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Timeline Tab -->
-  <div *ngIf="activeTab === 'timeline'" class="tab-content">
-    <div class="card">
-      <div class="card-header">
-        <h2>Línea de Tiempo del Trámite</h2>
+  <!-- Lista de Conexiones -->
+  <div class="connections-list">
+    <div class="list-header">
+      <h3>🔗 Conexiones ({{ conexiones.length }})</h3>
+    </div>
+    <div *ngIf="conexiones.length === 0" class="empty-list">
+      No hay conexiones. Crea una con el botón "🔗 Conexión"
+    </div>
+    <div *ngFor="let conn of conexiones" class="connection-item">
+      <div class="conn-info">
+        <span class="node-from">{{ getNombreNodo(conn.origen) }}</span>
+        <span class="conn-arrow">→</span>
+        <span class="node-to">{{ getNombreNodo(conn.destino) }}</span>
+        <span class="conn-label">"{{ conn.etiqueta }}"</span>
+        <span [class.iterativa]="conn.tipo === 'iterativa'" class="conn-type">
+          {{ conn.tipo === 'secuencial' ? '▶' : '⟲' }}
+        </span>
       </div>
-      <div class="timeline">
-        <div *ngFor="let proceso of procesos; let i = index" class="timeline-item">
-          <div class="timeline-marker" [style.background-color]="obtenerColorDepartamento(proceso.departamento)">
-            {{ proceso.icono }}
-          </div>
-          <div class="timeline-content">
-            <div class="timeline-department" [style.color]="obtenerColorDepartamento(proceso.departamento)">
-              {{ proceso.departamento }}
-            </div>
-            <div class="timeline-title">{{ proceso.nombre }}</div>
-            <div class="timeline-description">{{ proceso.descripcion }}</div>
-          </div>
-          <div *ngIf="i < procesos.length - 1" class="timeline-connector"></div>
+      <button class="btn-delete-small" (click)="eliminarConexion(conn.id)">✕</button>
+    </div>
+  </div>
+
+  <!-- Modal - Crear/Editar Nodo -->
+  <div *ngIf="modalAbierto" class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ nodoEnEdicion ? '✏️ Editar Nodo' : '➕ Crear Nodo' }}</h2>
+        <button class="btn-close" (click)="cerrarModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre de Actividad</label>
+          <input 
+            type="text" 
+            [(ngModel)]="formularioNodo.nombre"
+            placeholder="Ej: Revisar Documentos"
+            class="form-input"
+          />
         </div>
+
+        <div class="form-group">
+          <label>Departamento</label>
+          <select [(ngModel)]="formularioNodo.departamento" class="form-input">
+            <option *ngFor="let dept of departamentos" [value]="dept">{{ dept }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ícono</label>
+          <input 
+            type="text" 
+            [(ngModel)]="formularioNodo.icono"
+            placeholder="Ej: 📋"
+            class="form-input"
+            maxlength="2"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea 
+            [(ngModel)]="formularioNodo.descripcion"
+            placeholder="Descripción opcional"
+            class="form-input"
+            rows="2"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarNodo()">Guardar</button>
       </div>
     </div>
   </div>
 
-  <!-- Estadísticas Tab -->
-  <div *ngIf="activeTab === 'estadisticas'" class="tab-content">
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon" style="color: #2196F3;">🏪</div>
-        <div class="stat-label">Ventas</div>
-        <div class="stat-activities">1 Actividad</div>
-        <div class="stat-time">1-2 Días</div>
+  <!-- Modal - Crear Conexión -->
+  <div *ngIf="modalConexion" class="modal-overlay" (click)="cerrarModalConexion()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>🔗 Crear Conexión</h2>
+        <button class="btn-close" (click)="cerrarModalConexion()">✕</button>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="color: #FF9800;">⚖️</div>
-        <div class="stat-label">Legal</div>
-        <div class="stat-activities">2 Actividades</div>
-        <div class="stat-time">4-6 Días</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="color: #4CAF50;">💰</div>
-        <div class="stat-label">Finanzas</div>
-        <div class="stat-activities">2 Actividades</div>
-        <div class="stat-time">3-4 Días</div>
-      </div>
-      <div class="stat-card highlight">
-        <div class="stat-icon">📊</div>
-        <div class="stat-label">Tiempo Total</div>
-        <div class="stat-activities">5 Actividades</div>
-        <div class="stat-time">7-11 Días</div>
-      </div>
-    </div>
 
-    <!-- Reglas de Flujo -->
-    <div class="card" style="margin-top: 30px;">
-      <div class="card-header">
-        <h2>Reglas del Flujo de Trámite</h2>
-      </div>
-      <div class="rules-container">
-        <div class="rule">
-          <div class="rule-icon">→</div>
-          <div class="rule-content">
-            <div class="rule-title">Flujo Secuencial</div>
-            <p>Las actividades se ejecutan en orden. Una actividad comienza después de que la anterior se completa.</p>
-            <p class="example">Ejemplo: Recibir Solicitud → Revisar Documentos → Validar Presupuesto</p>
-          </div>
-        </div>
-        
-        <div class="rule">
-          <div class="rule-icon">⟲</div>
-          <div class="rule-content">
-            <div class="rule-title">Flujo Iterativo</div>
-            <p>Si una validación falla, el proceso regresa a una actividad anterior para correcciones.</p>
-            <p class="example">Ejemplo: Si faltan documentos, regresa a "Revisar Documentos" desde Legal</p>
-          </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Desde (Nodo Origen)</label>
+          <select [(ngModel)]="nuevaConexion.origen" class="form-input">
+            <option value="">Seleccionar...</option>
+            <option *ngFor="let nodo of nodos" [value]="nodo.id">
+              {{ nodo.nombre }} ({{ nodo.departamento }})
+            </option>
+          </select>
         </div>
 
-        <div class="rule">
-          <div class="rule-icon">◇</div>
-          <div class="rule-content">
-            <div class="rule-title">Punto de Decisión</div>
-            <p>Compuerta de validación que determina si continúa el flujo o retorna.</p>
-            <p class="example">Ejemplo: ¿Documentos Completos? → Sí (continúa) / No (retorna)</p>
-          </div>
+        <div class="form-group">
+          <label>Hacia (Nodo Destino)</label>
+          <select [(ngModel)]="nuevaConexion.destino" class="form-input">
+            <option value="">Seleccionar...</option>
+            <option *ngFor="let nodo of nodos" [value]="nodo.id">
+              {{ nodo.nombre }} ({{ nodo.departamento }})
+            </option>
+          </select>
         </div>
 
-        <div class="rule">
-          <div class="rule-icon">🔄</div>
-          <div class="rule-content">
-            <div class="rule-title">Transferencia Interdepartamental</div>
-            <p>El trámite se transfiere entre departamentos según el flujo establecido.</p>
-            <p class="example">Ejemplo: Ventas → Legal → Finanzas → Legal → Finalización</p>
-          </div>
+        <div class="form-group">
+          <label>Etiqueta</label>
+          <input 
+            type="text" 
+            [(ngModel)]="nuevaConexion.etiqueta"
+            placeholder="Ej: Aprobado, Con Errores"
+            class="form-input"
+          />
         </div>
+
+        <div class="form-group">
+          <label>Tipo de Flujo</label>
+          <select [(ngModel)]="nuevaConexion.tipo" class="form-input">
+            <option value="secuencial">▶ Secuencial (línea directa)</option>
+            <option value="iterativa">⟲ Iterativa (retorno/ciclo)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModalConexion()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarConexion()">Crear</button>
       </div>
     </div>
   </div>
 </div>
+
