@@ -1,9 +1,9 @@
 <div class="analytics-container">
-  <!-- Header -->
+  <!-- Header Principal -->
   <div class="analytics-header">
     <div class="header-title">
-      <h1>📊 Editor Interactivo de Diagramas</h1>
-      <p class="subtitle">Arrastra nodos, edita actividades, y crea conexiones entre departamentos</p>
+      <h1>📊 Editor Interactivo de Diagramas de Trámites</h1>
+      <p class="subtitle">Organiza y visualiza flujos de departamentos de forma dinámica</p>
     </div>
     <div class="header-actions">
       <button class="btn-action btn-primary" (click)="agregarNodo()" title="Agregar nueva actividad">
@@ -21,67 +21,103 @@
     </div>
   </div>
 
-  <!-- Canvas Editor -->
-  <div class="editor-container">
-    <canvas #canvas class="canvas-editor" width="1000" height="600"></canvas>
+  <!-- Headers de Departamentos -->
+  <div class="departamentos-header">
+    <div class="dept-legend">
+      <span class="legend-label">Departamentos:</span>
+      <div class="legend-items">
+        <div *ngFor="let dept of departamentos" class="legend-item">
+          <span class="legend-color" [style.background-color]="dept.color"></span>
+          <span class="legend-text">{{ dept.icono }} {{ dept.nombre }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas Editor con Columnas Visuales -->
+  <div class="editor-wrapper">
+    <div class="departamentos-columnas">
+      <div *ngFor="let dept of departamentos" class="columna-departamento">
+        <div class="columna-header" [style.border-left-color]="dept.color">
+          <span class="dept-icono">{{ dept.icono }}</span>
+          <span class="dept-nombre">{{ dept.nombre }}</span>
+          <span class="dept-count">({{ (obtenerNodosEnDepartamento(dept.id) | slice:0).length }})</span>
+        </div>
+      </div>
+    </div>
+    
+    <canvas #canvas class="canvas-editor" width="1400" height="700"></canvas>
     
     <!-- Instructions -->
     <div class="instructions">
-      <span>🖱️ Arrastra nodos • 🖱️🖱️ Doble-clic para editar • ❌ Selecciona y presiona DEL para eliminar</span>
+      <span>🖱️ Arrastra nodos • 🖱️🖱️ Doble-clic para editar • ⌫ DEL para eliminar • 👆 Clic para seleccionar</span>
     </div>
   </div>
 
-  <!-- Nodo Seleccionado Panel -->
-  <div *ngIf="nodoSeleccionado" class="selected-panel">
-    <div class="panel-header">
-      <h3>📌 Nodo Seleccionado</h3>
-      <button class="btn-close" (click)="nodoSeleccionado = null">✕</button>
+  <!-- Panel Información -->
+  <div class="info-panels">
+    <!-- Nodo Seleccionado -->
+    <div *ngIf="nodoSeleccionado" class="selected-panel">
+      <div class="panel-header">
+        <h3>📌 Nodo Seleccionado</h3>
+        <button class="btn-close" (click)="nodoSeleccionado = null">✕</button>
+      </div>
+      <div class="panel-content">
+        <div class="info-row">
+          <label>Nombre:</label>
+          <span>{{ nodoSeleccionado.nombre }}</span>
+        </div>
+        <div class="info-row">
+          <label>Departamento:</label>
+          <span [style.color]="obtenerColorDepartamento(nodoSeleccionado.idDepartamento)" class="dept-badge">
+            {{ obtenerNombreDepartamento(nodoSeleccionado.idDepartamento) }}
+          </span>
+        </div>
+        <div class="info-row">
+          <label>Trámite:</label>
+          <span>{{ nodoSeleccionado.idTramite }}</span>
+        </div>
+        <div class="info-row">
+          <label>Estado:</label>
+          <span [style.color]="obtenerEstadoColor(nodoSeleccionado.estado)" class="estado-badge">
+            {{ nodoSeleccionado.estado | uppercase }}
+          </span>
+        </div>
+        <div class="info-row">
+          <label>Posición:</label>
+          <span>X: {{ nodoSeleccionado.x | number:'0.0-0' }}, Y: {{ nodoSeleccionado.y | number:'0.0-0' }}</span>
+        </div>
+        <div class="panel-buttons">
+          <button class="btn-edit" (click)="editarNodo()">
+            ✏️ Editar
+          </button>
+          <button class="btn-delete" (click)="eliminarNodo()">
+            🗑️ Eliminar
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="panel-content">
-      <div class="info-row">
-        <label>Nombre:</label>
-        <span>{{ nodoSeleccionado.nombre }}</span>
-      </div>
-      <div class="info-row">
-        <label>Departamento:</label>
-        <span [style.color]="coloresDept[nodoSeleccionado.departamento]">
-          {{ nodoSeleccionado.departamento }}
-        </span>
-      </div>
-      <div class="info-row">
-        <label>Posición:</label>
-        <span>X: {{ nodoSeleccionado.x | number:'0.0-0' }}, Y: {{ nodoSeleccionado.y | number:'0.0-0' }}</span>
-      </div>
-      <div class="panel-buttons">
-        <button class="btn-edit" (click)="editarNodo()">
-          ✏️ Editar
-        </button>
-        <button class="btn-delete" (click)="eliminarNodo()">
-          🗑️ Eliminar
-        </button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Lista de Conexiones -->
-  <div class="connections-list">
-    <div class="list-header">
-      <h3>🔗 Conexiones ({{ conexiones.length }})</h3>
-    </div>
-    <div *ngIf="conexiones.length === 0" class="empty-list">
-      No hay conexiones. Crea una con el botón "🔗 Conexión"
-    </div>
-    <div *ngFor="let conn of conexiones" class="connection-item">
-      <div class="conn-info">
-        <span class="node-from">{{ getNombreNodo(conn.origen) }}</span>
-        <span class="conn-arrow">→</span>
-        <span class="node-to">{{ getNombreNodo(conn.destino) }}</span>
-        <span class="conn-label">"{{ conn.etiqueta }}"</span>
-        <span [class.iterativa]="conn.tipo === 'iterativa'" class="conn-type">
-          {{ conn.tipo === 'secuencial' ? '▶' : '⟲' }}
-        </span>
+    <!-- Lista de Conexiones -->
+    <div class="connections-list">
+      <div class="list-header">
+        <h3>🔗 Conexiones ({{ conexiones.length }})</h3>
       </div>
-      <button class="btn-delete-small" (click)="eliminarConexion(conn.id)">✕</button>
+      <div *ngIf="conexiones.length === 0" class="empty-list">
+        No hay conexiones. Crea una con el botón "🔗 Conexión"
+      </div>
+      <div *ngFor="let conn of conexiones" class="connection-item">
+        <div class="conn-info">
+          <span class="node-from">{{ obtenerNombreNodo(conn.origen) }}</span>
+          <span class="conn-arrow">→</span>
+          <span class="node-to">{{ obtenerNombreNodo(conn.destino) }}</span>
+          <span class="conn-label" *ngIf="conn.etiqueta">"{{ conn.etiqueta }}"</span>
+          <span [class.iterativa]="conn.tipo === 'iterativa'" class="conn-type">
+            {{ conn.tipo === 'secuencial' ? '▶' : '⟲' }}
+          </span>
+        </div>
+        <button class="btn-delete-small" (click)="eliminarConexion(conn.id)">✕</button>
+      </div>
     </div>
   </div>
 
@@ -95,7 +131,7 @@
 
       <div class="modal-body">
         <div class="form-group">
-          <label>Nombre de Actividad</label>
+          <label>Nombre de Actividad *</label>
           <input 
             type="text" 
             [(ngModel)]="formularioNodo.nombre"
@@ -105,9 +141,9 @@
         </div>
 
         <div class="form-group">
-          <label>Departamento</label>
-          <select [(ngModel)]="formularioNodo.departamento" class="form-input">
-            <option *ngFor="let dept of departamentos" [value]="dept">{{ dept }}</option>
+          <label>Departamento *</label>
+          <select [(ngModel)]="formularioNodo.idDepartamento" class="form-input">
+            <option *ngFor="let dept of departamentos" [value]="dept.id">{{ dept.icono }} {{ dept.nombre }}</option>
           </select>
         </div>
 
@@ -120,6 +156,16 @@
             class="form-input"
             maxlength="2"
           />
+        </div>
+
+        <div class="form-group">
+          <label>Estado</label>
+          <select [(ngModel)]="formularioNodo.estado" class="form-input">
+            <option value="pendiente">⏳ Pendiente</option>
+            <option value="en_proceso">▶️ En Proceso</option>
+            <option value="completado">✓ Completado</option>
+            <option value="rechazado">✗ Rechazado</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -150,21 +196,21 @@
 
       <div class="modal-body">
         <div class="form-group">
-          <label>Desde (Nodo Origen)</label>
+          <label>Desde (Nodo Origen) *</label>
           <select [(ngModel)]="nuevaConexion.origen" class="form-input">
             <option value="">Seleccionar...</option>
             <option *ngFor="let nodo of nodos" [value]="nodo.id">
-              {{ nodo.nombre }} ({{ nodo.departamento }})
+              {{ nodo.icono }} {{ nodo.nombre }} ({{ obtenerNombreDepartamento(nodo.idDepartamento) }})
             </option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Hacia (Nodo Destino)</label>
+          <label>Hacia (Nodo Destino) *</label>
           <select [(ngModel)]="nuevaConexion.destino" class="form-input">
             <option value="">Seleccionar...</option>
             <option *ngFor="let nodo of nodos" [value]="nodo.id">
-              {{ nodo.nombre }} ({{ nodo.departamento }})
+              {{ nodo.icono }} {{ nodo.nombre }} ({{ obtenerNombreDepartamento(nodo.idDepartamento) }})
             </option>
           </select>
         </div>
