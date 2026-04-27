@@ -28,6 +28,38 @@ export class AppComponent implements OnInit {
     return !!this.usuarioActual;
   }
 
+  obtenerRolLabel(): string {
+    if (!this.usuarioActual) {
+      return '';
+    }
+    switch (this.usuarioActual.rol) {
+      case 'admin':
+        return 'Administrador';
+      case 'funcionario':
+        return 'Funcionario';
+      case 'cliente':
+        return 'Cliente';
+      default:
+        return this.usuarioActual.rol;
+    }
+  }
+
+  puedeVerMonitor(): boolean {
+    return this.usuarioActual?.rol === 'admin' || this.usuarioActual?.rol === 'funcionario';
+  }
+
+  puedeVerAnalytics(): boolean {
+    return this.usuarioActual?.rol === 'admin' || this.usuarioActual?.rol === 'funcionario';
+  }
+
+  puedeVerDepartamentos(): boolean {
+    return this.usuarioActual?.rol === 'admin';
+  }
+
+  puedeVerUsuarios(): boolean {
+    return this.usuarioActual?.rol === 'admin';
+  }
+
   toggleSidebar(): void {
     this.sidebarAbierto = !this.sidebarAbierto;
   }

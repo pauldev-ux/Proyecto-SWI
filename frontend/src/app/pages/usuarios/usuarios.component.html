@@ -128,22 +128,35 @@
 
         <div class="form-group">
           <label for="rol">Rol</label>
-          <select id="rol" [(ngModel)]="formulario.rol" class="form-input">
+          <select id="rol" [(ngModel)]="formulario.rol" (change)="onRolChange()" class="form-input">
             <option value="funcionario">Funcionario</option>
-            <option value="diseñador">Diseñador</option>
+            <option value="cliente">Cliente</option>
             <option value="admin">Administrador</option>
           </select>
+          <small class="form-hint" *ngIf="formulario.rol === 'admin'">
+            El administrador tiene acceso a todos los departamentos
+          </small>
+          <small class="form-hint" *ngIf="formulario.rol === 'cliente'">
+            Los clientes no se asignan a un departamento
+          </small>
         </div>
 
-        <div class="form-group">
-          <label for="departamento">Departamento</label>
-          <input 
-            type="text" 
+        <div class="form-group" *ngIf="formulario.rol === 'funcionario'">
+          <label for="departamento">Departamento <span class="required">*</span></label>
+          <select 
             id="departamento" 
             [(ngModel)]="formulario.departamento"
-            placeholder="Departamento (opcional)"
             class="form-input"
-          />
+            required
+          >
+            <option value="" disabled>Seleccione un departamento</option>
+            <option *ngFor="let dept of departamentos" [value]="dept.nombre">
+              {{ dept.nombre }}
+            </option>
+          </select>
+          <small class="form-hint" *ngIf="departamentos.length === 0">
+            No hay departamentos registrados. Cree uno primero en la sección de Departamentos.
+          </small>
         </div>
       </div>
 

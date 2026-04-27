@@ -4,7 +4,7 @@ from enum import Enum
 
 class RolUsuario(str, Enum):
     ADMIN = "admin"
-    DISEÑADOR = "diseñador"
+    CLIENTE = "cliente"
     FUNCIONARIO = "funcionario"
 
 class Usuario:

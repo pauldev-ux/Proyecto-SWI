@@ -1,4 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { TramiteService } from '../../services/tramite.service';
+import { Tramite } from '../../models';
 
 // ===================== INTERFACES =====================
 
@@ -53,102 +55,16 @@ export interface LayoutInfo {
 export class AnalyticsComponent implements OnInit {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
+  // ===== FILTRO =====
+  referenciaBusqueda: string = '';
+  tramiteActual: Tramite | null = null;
+  cargando: boolean = false;
+  error: string = '';
+
   // ===== DATOS =====
-  departamentos: Departamento[] = [
-    { id: 'd1', nombre: 'Inicio', icono: '🚀', color: '#667eea', orden: 1 },
-    { id: 'd2', nombre: 'Recursos Humanos', icono: '👥', color: '#f093fb', orden: 2 },
-    { id: 'd3', nombre: 'Legal', icono: '⚖️', color: '#FF9800', orden: 3 },
-    { id: 'd4', nombre: 'Finanzas', icono: '💰', color: '#4CAF50', orden: 4 },
-    { id: 'd5', nombre: 'Ventas', icono: '🏪', color: '#2196F3', orden: 5 }
-  ];
-
-  nodos: Nodo[] = [
-    {
-      id: 'n1',
-      nombre: 'Solicitud Iniciada',
-      idDepartamento: 'd1',
-      idTramite: 't1',
-      estado: 'completado',
-      icono: '📋',
-      descripcion: 'Cliente inicia el trámite',
-      x: 0, y: 0, ancho: 140, alto: 80,
-      ordenEnDept: 1
-    },
-    {
-      id: 'n2',
-      nombre: 'Verificación RRHH',
-      idDepartamento: 'd2',
-      idTramite: 't1',
-      estado: 'completado',
-      icono: '👤',
-      descripcion: 'RRHH verifica los datos',
-      x: 0, y: 0, ancho: 140, alto: 80,
-      ordenEnDept: 1
-    },
-    {
-      id: 'n3',
-      nombre: 'Revisión Legal',
-      idDepartamento: 'd3',
-      idTramite: 't1',
-      estado: 'en_proceso',
-      icono: '📄',
-      descripcion: 'Equipo legal revisa',
-      x: 0, y: 0, ancho: 140, alto: 80,
-      ordenEnDept: 1
-    },
-    {
-      id: 'n4',
-      nombre: 'Validación Presupuesto',
-      idDepartamento: 'd4',
-      idTramite: 't1',
-      estado: 'pendiente',
-      icono: '💰',
-      descripcion: 'Finanzas valida costo',
-      x: 0, y: 0, ancho: 140, alto: 80,
-      ordenEnDept: 1
-    },
-    {
-      id: 'n5',
-      nombre: 'Aprobación Final',
-      idDepartamento: 'd5',
-      idTramite: 't1',
-      estado: 'pendiente',
-      icono: '✓',
-      descripcion: 'Ventas aprueba',
-      x: 0, y: 0, ancho: 140, alto: 80,
-      ordenEnDept: 1
-    },
-    {
-      id: 'n6',
-      nombre: 'Solicitud Iniciada',
-      idDepartamento: 'd1',
-      idTramite: 't2',
-      estado: 'completado',
-      icono: '📋',
-      descripcion: 'Segunda solicitud',
-      x: 0, y: 0, ancho: 140, alto: 80,
-      ordenEnDept: 2
-    },
-    {
-      id: 'n7',
-      nombre: 'Verificación RRHH',
-      idDepartamento: 'd2',
-      idTramite: 't2',
-      estado: 'en_proceso',
-      icono: '👤',
-      descripcion: 'RRHH verifica',
-      x: 0, y: 0, ancho: 140, alto: 80,
-      ordenEnDept: 2
-    }
-  ];
-
-  conexiones: Conexion[] = [
-    { id: 'c1', origen: 'n1', destino: 'n2', etiqueta: 'OK', tipo: 'secuencial', idTramite: 't1' },
-    { id: 'c2', origen: 'n2', destino: 'n3', etiqueta: 'OK', tipo: 'secuencial', idTramite: 't1' },
-    { id: 'c3', origen: 'n3', destino: 'n4', etiqueta: 'OK', tipo: 'secuencial', idTramite: 't1' },
-    { id: 'c4', origen: 'n4', destino: 'n5', etiqueta: 'OK', tipo: 'secuencial', idTramite: 't1' },
-    { id: 'c5', origen: 'n6', destino: 'n7', etiqueta: 'OK', tipo: 'secuencial', idTramite: 't2' }
-  ];
+  departamentos: Departamento[] = [];
+  nodos: Nodo[] = [];
+  conexiones: Conexion[] = [];
 
   // ===== ESTADO DEL EDITOR =====
   nodoSeleccionado: Nodo | null = null;
@@ -171,14 +87,13 @@ export class AnalyticsComponent implements OnInit {
   offsetY: number = 0;
 
   // ===== TRAMITES =====
-  tramites: string[] = ['t1', 't2'];
-  tramiteSeleccionado: string = 't1';
+  tramites: string[] = [];
+  tramiteSeleccionado: string = '';
 
-  constructor() {}
+  constructor(private tramiteService: TramiteService) {}
 
   ngOnInit(): void {
     this.cargarDepartamentos();
-    this.calcularLayout();
     setTimeout(() => {
       this.inicializarCanvas();
       this.dibujar();
@@ -189,6 +104,106 @@ export class AnalyticsComponent implements OnInit {
 
   cargarDepartamentos(): void {
     // En producción: this.departamentos = await this.departamentoService.obtener();
+  }
+
+  buscarTramite(): void {
+    if (!this.referenciaBusqueda.trim()) {
+      this.error = 'Ingrese una referencia de trámite';
+      return;
+    }
+
+    this.cargando = true;
+    this.error = '';
+    this.tramiteService.obtenerPorReferencia(this.referenciaBusqueda.trim()).subscribe({
+      next: (tramite) => {
+        this.tramiteActual = tramite;
+        this.cargarDatosTramite(tramite);
+        this.cargando = false;
+        this.dibujar();
+      },
+      error: (err) => {
+        this.error = 'Trámite no encontrado';
+        this.tramiteActual = null;
+        this.nodos = [];
+        this.conexiones = [];
+        this.cargando = false;
+        this.dibujar();
+      }
+    });
+  }
+
+  cargarDatosTramite(tramite: Tramite): void {
+    // Cargar nodos y conexiones basados en la ruta_departamentos del trámite
+    this.nodos = [];
+    this.conexiones = [];
+
+    if (!tramite) return;
+
+    const tramiteId = tramite.id ?? '';
+    const ruta = tramite.ruta_departamentos || [];
+    if (ruta.length === 0) {
+      // Si no hay ruta definida, mostrar solo el departamento actual
+      ruta.push(tramite.departamento || 'Sin Asignar');
+    }
+
+    // Crear nodos para cada departamento en la ruta
+    ruta.forEach((deptNombre, index) => {
+      const deptId = `d${index + 1}`;
+      const estado = this.determinarEstadoNodo(tramite, index, ruta.length);
+
+      this.nodos.push({
+        id: `n${index + 1}`,
+        nombre: `Paso ${index + 1}: ${deptNombre}`,
+        idDepartamento: deptId,
+        idTramite: tramiteId,
+        estado: estado,
+        icono: this.obtenerIconoEstado(estado),
+        descripcion: `Trámite en ${deptNombre}`,
+        x: 0, y: 0, ancho: 140, alto: 80,
+        ordenEnDept: 1
+      });
+    });
+
+    // Crear conexiones secuenciales
+    for (let i = 0; i < this.nodos.length - 1; i++) {
+      this.conexiones.push({
+        id: `c${i + 1}`,
+        origen: this.nodos[i].id,
+        destino: this.nodos[i + 1].id,
+        etiqueta: 'Siguiente',
+        tipo: 'secuencial',
+        idTramite: tramiteId
+      });
+    }
+  }
+
+  determinarEstadoNodo(tramite: Tramite, index: number, totalPasos: number): 'pendiente' | 'en_proceso' | 'completado' | 'rechazado' {
+    const estado = tramite.estado;
+    const ruta = tramite.ruta_departamentos || [];
+    const deptActual = tramite.departamento;
+
+    if (estado === 'rechazado') return 'rechazado';
+    if (estado === 'completado') return 'completado';
+
+    // Si estamos en el último paso y el estado es aceptado, marcar como completado
+    if (index === totalPasos - 1 && estado === 'aceptado') return 'completado';
+
+    // Si el departamento actual coincide con este paso, está en proceso
+    if (deptActual && ruta[index] === deptActual) return 'en_proceso';
+
+    // Si el índice es menor que la posición del departamento actual, está completado
+    if (deptActual && ruta.indexOf(deptActual) > index) return 'completado';
+
+    return 'pendiente';
+  }
+
+  obtenerIconoEstado(estado: string): string {
+    switch (estado) {
+      case 'completado': return '✅';
+      case 'en_proceso': return '🔄';
+      case 'rechazado': return '❌';
+      default: return '⏳';
+    }
   }
 
   crearLayoutInfo(): LayoutInfo {
@@ -205,12 +220,12 @@ export class AnalyticsComponent implements OnInit {
   }
 
   crearNodoVacio(): Nodo {
-    const deptActual = this.departamentos[0];
+    const deptActual = this.departamentos?.length > 0 ? this.departamentos[0] : null;
     return {
       id: `n${Date.now()}`,
       nombre: '',
-      idDepartamento: deptActual.id,
-      idTramite: this.tramiteSeleccionado,
+      idDepartamento: deptActual?.id ?? '',
+      idTramite: this.tramiteSeleccionado ?? '',
       estado: 'pendiente',
       icono: '📋',
       descripcion: '',

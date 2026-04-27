@@ -43,6 +43,10 @@ export class TramiteService {
     return this.http.get<Tramite[]>(`${this.apiUrl}/cliente/${cliente}`);
   }
 
+  obtenerPorReferencia(referencia: string): Observable<Tramite> {
+    return this.http.get<Tramite>(`${this.apiUrl}/referencia/${referencia}`);
+  }
+
   listarPorDepartamento(departamento: string): Observable<Tramite[]> {
     return this.http.get<Tramite[]>(`${this.apiUrl}/departamento/${departamento}`);
   }

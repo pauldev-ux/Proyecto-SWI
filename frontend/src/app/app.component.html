@@ -23,31 +23,27 @@
             <span class="menu-icon">📊</span>
             <span class="menu-text" *ngIf="sidebarAbierto">Dashboard</span>
           </a>
-          <a routerLink="/monitor" routerLinkActive="active" class="menu-item">
-            <span class="menu-icon">📡</span>
-            <span class="menu-text" *ngIf="sidebarAbierto">Monitor en Vivo</span>
-          </a>
-          <a routerLink="/analytics" routerLinkActive="active" class="menu-item">
-            <span class="menu-icon">📈</span>
-            <span class="menu-text" *ngIf="sidebarAbierto">Analytics</span>
-          </a>
-          <a routerLink="/departamentos" routerLinkActive="active" class="menu-item">
-            <span class="menu-icon">🏢</span>
-            <span class="menu-text" *ngIf="sidebarAbierto">Departamentos</span>
-          </a>
         </div>
 
         <div class="menu-section">
           <p class="section-title" *ngIf="sidebarAbierto">GESTIÓN</p>
-          <a routerLink="/politicas" routerLinkActive="active" class="menu-item">
-            <span class="menu-icon">📋</span>
-            <span class="menu-text" *ngIf="sidebarAbierto">Políticas</span>
-          </a>
           <a routerLink="/tramites" routerLinkActive="active" class="menu-item">
             <span class="menu-icon">📝</span>
             <span class="menu-text" *ngIf="sidebarAbierto">Trámites</span>
           </a>
-          <a routerLink="/usuarios" routerLinkActive="active" class="menu-item">
+          <a routerLink="/departamentos" routerLinkActive="active" class="menu-item" *ngIf="puedeVerDepartamentos()">
+            <span class="menu-icon">🏢</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Departamentos</span>
+          </a>
+          <a routerLink="/monitor" routerLinkActive="active" class="menu-item" *ngIf="puedeVerMonitor()">
+            <span class="menu-icon">📡</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Monitor en Vivo</span>
+          </a>
+          <a routerLink="/analytics" routerLinkActive="active" class="menu-item" *ngIf="puedeVerAnalytics()">
+            <span class="menu-icon">📈</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Analytics</span>
+          </a>
+          <a routerLink="/usuarios" routerLinkActive="active" class="menu-item" *ngIf="puedeVerUsuarios()">
             <span class="menu-icon">👥</span>
             <span class="menu-text" *ngIf="sidebarAbierto">Usuarios</span>
           </a>
@@ -59,7 +55,7 @@
           <div class="user-avatar">{{ (usuarioActual?.nombre || '').charAt(0).toUpperCase() }}</div>
           <div class="user-details">
             <p class="user-name">{{ usuarioActual?.nombre }}</p>
-            <p class="user-role">{{ usuarioActual?.rol }}</p>
+            <p class="user-role">{{ obtenerRolLabel() }}</p>
           </div>
         </div>
         <button class="logout-btn" (click)="logout()">Cerrar sesión</button>

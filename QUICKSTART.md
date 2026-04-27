@@ -139,6 +139,8 @@ db.usuarios.insertOne({
 ```bash
 # Cambiar puerto en main.py o:
 python -m uvicorn main:app --port 8001 --reload
+# IMPORTANTE: Si cambias el puerto, actualiza también todos los servicios del frontend
+# (usuario.service.ts, tramite.service.ts, etc.) para usar el mismo puerto.
 ```
 
 ### Puerto 4200 en uso

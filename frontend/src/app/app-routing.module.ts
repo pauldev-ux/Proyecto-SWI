@@ -13,17 +13,14 @@ const routes: Routes = [
   { 
     path: 'monitor', 
     loadChildren: () => import('./pages/monitor/monitor.module').then(m => m.MonitorModule),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'funcionario'] }
   },
   { 
     path: 'analytics', 
     loadChildren: () => import('./pages/analytics/analytics.module').then(m => m.AnalyticsModule),
-    canActivate: [AuthGuard]
-  },
-  { 
-    path: 'politicas', 
-    loadChildren: () => import('./pages/politicas/politicas.module').then(m => m.PoliticasModule),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin', 'funcionario'] }
   },
   { 
     path: 'tramites', 
@@ -33,12 +30,14 @@ const routes: Routes = [
   { 
     path: 'departamentos', 
     loadChildren: () => import('./pages/departamentos/departamentos.module').then(m => m.DepartamentosModule),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] }
   },
   { 
     path: 'usuarios', 
     loadChildren: () => import('./pages/usuarios/usuarios.module').then(m => m.UsuariosModule),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] }
   }
 ];
 

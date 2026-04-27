@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
@@ -22,6 +22,7 @@ class TramiteCreateSchema(BaseModel):
     cliente: str = Field(..., min_length=1, max_length=255, description="Nombre del cliente")
     asunto: str = Field(..., min_length=1, max_length=1000, description="Asunto del trámite")
     departamento: Optional[str] = Field(None, description="Departamento responsable")
+    ruta_departamentos: Optional[List[str]] = Field(None, description="Flujo de departamentos por los que pasará el trámite")
     prioridad: Optional[PrioridadEnum] = Field(PrioridadEnum.NORMAL, description="Prioridad del trámite")
     usuario_asignado: Optional[str] = Field(None, description="Usuario asignado al trámite")
 
@@ -31,6 +32,7 @@ class TramiteUpdateSchema(BaseModel):
     cliente: Optional[str] = Field(None, min_length=1, max_length=255)
     asunto: Optional[str] = Field(None, min_length=1, max_length=1000)
     departamento: Optional[str] = None
+    ruta_departamentos: Optional[List[str]] = None
     estado: Optional[EstadoTramiteEnum] = None
     prioridad: Optional[PrioridadEnum] = None
     usuario_asignado: Optional[str] = None
@@ -42,6 +44,7 @@ class TramiteSchema(BaseModel):
     cliente: str
     asunto: str
     departamento: Optional[str] = None
+    ruta_departamentos: Optional[List[str]] = None
     estado: EstadoTramiteEnum
     prioridad: PrioridadEnum
     usuario_asignado: Optional[str] = None

@@ -26,6 +26,7 @@ async def crear_tramite(
             cliente=tramite.cliente,
             asunto=tramite.asunto,
             departamento=tramite.departamento,
+            ruta_departamentos=tramite.ruta_departamentos,
             prioridad=tramite.prioridad,
             usuario_asignado=tramite.usuario_asignado
         )
@@ -36,6 +37,7 @@ async def crear_tramite(
             "cliente": nuevo_tramite["cliente"],
             "asunto": nuevo_tramite["asunto"],
             "departamento": nuevo_tramite["departamento"],
+            "ruta_departamentos": nuevo_tramite.get("ruta_departamentos"),
             "estado": nuevo_tramite["estado"],
             "prioridad": nuevo_tramite["prioridad"],
             "usuario_asignado": nuevo_tramite["usuario_asignado"],
@@ -63,6 +65,7 @@ async def listar_tramites(
             "cliente": t["cliente"],
             "asunto": t["asunto"],
             "departamento": t["departamento"],
+            "ruta_departamentos": t.get("ruta_departamentos"),
             "estado": t["estado"],
             "prioridad": t["prioridad"],
             "usuario_asignado": t["usuario_asignado"],
@@ -88,6 +91,7 @@ async def obtener_tramite(
         "cliente": tramite["cliente"],
         "asunto": tramite["asunto"],
         "departamento": tramite["departamento"],
+        "ruta_departamentos": tramite.get("ruta_departamentos"),
         "estado": tramite["estado"],
         "prioridad": tramite["prioridad"],
         "usuario_asignado": tramite["usuario_asignado"],
@@ -116,6 +120,7 @@ async def actualizar_tramite(
             "cliente": tramite_actualizado["cliente"],
             "asunto": tramite_actualizado["asunto"],
             "departamento": tramite_actualizado["departamento"],
+            "ruta_departamentos": tramite_actualizado.get("ruta_departamentos"),
             "estado": tramite_actualizado["estado"],
             "prioridad": tramite_actualizado["prioridad"],
             "usuario_asignado": tramite_actualizado["usuario_asignado"],
@@ -161,6 +166,7 @@ async def cambiar_estado(
         "cliente": tramite_actualizado["cliente"],
         "asunto": tramite_actualizado["asunto"],
         "departamento": tramite_actualizado["departamento"],
+        "ruta_departamentos": tramite_actualizado.get("ruta_departamentos"),
         "estado": tramite_actualizado["estado"],
         "prioridad": tramite_actualizado["prioridad"],
         "usuario_asignado": tramite_actualizado["usuario_asignado"],
@@ -183,6 +189,7 @@ async def listar_por_cliente(
             "cliente": t["cliente"],
             "asunto": t["asunto"],
             "departamento": t["departamento"],
+            "ruta_departamentos": t.get("ruta_departamentos"),
             "estado": t["estado"],
             "prioridad": t["prioridad"],
             "usuario_asignado": t["usuario_asignado"],
@@ -191,6 +198,30 @@ async def listar_por_cliente(
         }
         for t in tramites
     ]
+
+@router.get("/referencia/{referencia}", response_model=TramiteSchema)
+async def obtener_por_referencia(
+    referencia: str,
+    service: TramiteService = Depends(get_tramite_service)
+):
+    """Obtener trámite por referencia"""
+    tramite = await service.obtener_por_referencia(referencia)
+    if not tramite:
+        raise HTTPException(status_code=404, detail="Trámite no encontrado")
+    
+    return {
+        "id": str(tramite["_id"]),
+        "referencia": tramite["referencia"],
+        "cliente": tramite["cliente"],
+        "asunto": tramite["asunto"],
+        "departamento": tramite["departamento"],
+        "ruta_departamentos": tramite.get("ruta_departamentos"),
+        "estado": tramite["estado"],
+        "prioridad": tramite["prioridad"],
+        "usuario_asignado": tramite["usuario_asignado"],
+        "fecha_creacion": tramite["fecha_creacion"],
+        "fecha_actualizacion": tramite["fecha_actualizacion"]
+    }
 
 @router.get("/departamento/{departamento}", response_model=List[TramiteSchema])
 async def listar_por_departamento(
@@ -207,6 +238,7 @@ async def listar_por_departamento(
             "cliente": t["cliente"],
             "asunto": t["asunto"],
             "departamento": t["departamento"],
+            "ruta_departamentos": t.get("ruta_departamentos"),
             "estado": t["estado"],
             "prioridad": t["prioridad"],
             "usuario_asignado": t["usuario_asignado"],

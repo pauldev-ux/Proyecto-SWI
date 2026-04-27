@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TramiteService } from '../../services/tramite.service';
 import { DepartamentoService } from '../../services/departamento.service';
-import { Tramite, Departamento } from '../../models';
+import { UsuarioService } from '../../services/usuario.service';
+import { Tramite, Departamento, Usuario } from '../../models';
 
 @Component({
   selector: 'app-tramites',
@@ -12,6 +13,7 @@ import { Tramite, Departamento } from '../../models';
 export class TramitesComponent implements OnInit {
   tramites: Tramite[] = [];
   departamentos: Departamento[] = [];
+  clientes: Usuario[] = [];
   formulario!: FormGroup;
   editando = false;
   cargando = false;
@@ -22,6 +24,7 @@ export class TramitesComponent implements OnInit {
   busqueda = '';
   filtroEstado = '';
   filtrosAbiertos = false;
+  usuarioActual: Usuario | null = null;
 
   estados = ['solicitado', 'en_proceso', 'aceptado', 'completado', 'rechazado'];
   prioridades = ['baja', 'normal', 'alta', 'urgente'];
@@ -29,23 +32,26 @@ export class TramitesComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private tramiteService: TramiteService,
-    private departamentoService: DepartamentoService
+    private departamentoService: DepartamentoService,
+    private usuarioService: UsuarioService
   ) {}
 
   ngOnInit(): void {
     this.inicializarFormulario();
     this.cargarDepartamentos();
+    this.cargarClientes();
+    this.cargarUsuarioActualDesdeServicio();
     this.cargarTramites();
   }
 
   inicializarFormulario(): void {
     this.formulario = this.fb.group({
       referencia: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
-      cliente: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(255)]],
+      cliente: ['', Validators.required],
       asunto: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(1000)]],
       departamento: [''],
-      prioridad: ['normal', Validators.required],
-      usuario_asignado: ['']
+      ruta_departamentos: [[]],
+      prioridad: ['normal', Validators.required]
     });
   }
 
@@ -60,9 +66,56 @@ export class TramitesComponent implements OnInit {
     });
   }
 
+  cargarClientes(): void {
+    this.usuarioService.obtenerUsuarios().subscribe({
+      next: (data) => {
+        this.clientes = (data || []).filter(u => u.rol === 'cliente');
+      },
+      error: (err) => {
+        console.error('Error al cargar clientes', err);
+        this.clientes = [];
+      }
+    });
+  }
+
+  cargarUsuarioActualDesdeServicio(): void {
+    this.usuarioService.obtenerUsuarioActual().subscribe({
+      next: (usuario) => {
+        this.usuarioActual = usuario;
+        this.cargarTramites(); // Recargar con filtro de usuario
+      },
+      error: (err) => {
+        console.error('Error al cargar usuario actual', err);
+      }
+    });
+  }
+
   cargarTramites(): void {
     this.cargando = true;
-    this.tramiteService.listar(this.filtroEstado || undefined).subscribe({
+    let departamentoFiltro: string | undefined;
+
+    // Aplicar filtros según el rol del usuario
+    if (this.usuarioActual) {
+      if (this.usuarioActual.rol === 'funcionario' && this.usuarioActual.departamento) {
+        // Funcionarios solo ven trámites de su departamento
+        departamentoFiltro = this.usuarioActual.departamento;
+      } else if (this.usuarioActual.rol === 'cliente') {
+        // Clientes solo ven sus propios trámites
+        this.tramiteService.listarPorCliente(this.usuarioActual.nombre).subscribe({
+          next: (data) => {
+            this.tramites = data;
+            this.cargando = false;
+          },
+          error: (err) => {
+            this.error = 'Error al cargar trámites';
+            this.cargando = false;
+          }
+        });
+        return;
+      }
+    }
+
+    this.tramiteService.listar(this.filtroEstado || undefined, departamentoFiltro).subscribe({
       next: (data) => {
         this.tramites = data;
         this.cargando = false;
@@ -78,7 +131,7 @@ export class TramitesComponent implements OnInit {
     this.mostrarFormulario = true;
     this.editando = false;
     this.tramiteEditandoId = null;
-    this.formulario.reset({ prioridad: 'normal' });
+    this.formulario.reset({ prioridad: 'normal', ruta_departamentos: [] });
     this.error = null;
     this.exito = null;
   }
@@ -136,8 +189,8 @@ export class TramitesComponent implements OnInit {
       cliente: tramite.cliente,
       asunto: tramite.asunto,
       departamento: tramite.departamento,
-      prioridad: tramite.prioridad,
-      usuario_asignado: tramite.usuario_asignado
+      ruta_departamentos: tramite.ruta_departamentos || [],
+      prioridad: tramite.prioridad
     });
     this.mostrarFormulario = true;
     this.error = null;

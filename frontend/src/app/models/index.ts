@@ -3,7 +3,7 @@ export interface Usuario {
   id?: string;
   username: string;
   nombre: string;
-  rol: 'admin' | 'diseñador' | 'funcionario';
+  rol: 'admin' | 'cliente' | 'funcionario';
   departamento?: string;
   activo: boolean;
   fecha_creacion?: Date;
@@ -65,6 +65,7 @@ export interface Tramite {
   cliente: string;
   asunto: string;
   departamento?: string;
+  ruta_departamentos?: string[];
   estado: 'solicitado' | 'en_proceso' | 'aceptado' | 'completado' | 'rechazado';
   prioridad: 'baja' | 'normal' | 'alta' | 'urgente';
   usuario_asignado?: string;

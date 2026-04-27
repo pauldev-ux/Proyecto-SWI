@@ -1,4 +1,33 @@
 <div class="analytics-container">
+  <!-- Filtro de Trámite -->
+  <div class="filtro-tramite">
+    <div class="filtro-header">
+      <h2>🔍 Buscar Trámite por Referencia</h2>
+    </div>
+    <div class="filtro-form">
+      <input 
+        type="text" 
+        [(ngModel)]="referenciaBusqueda" 
+        placeholder="Ingrese código o referencia del trámite (ej: codigo85)"
+        class="filtro-input"
+        (keyup.enter)="buscarTramite()"
+      />
+      <button 
+        class="btn-buscar" 
+        (click)="buscarTramite()" 
+        [disabled]="cargando"
+      >
+        {{ cargando ? 'Buscando...' : '🔍 Buscar' }}
+      </button>
+    </div>
+    <div *ngIf="error" class="error-message">
+      {{ error }}
+    </div>
+    <div *ngIf="tramiteActual" class="tramite-info">
+      <strong>Trámite encontrado:</strong> {{ tramiteActual.referencia }} - {{ tramiteActual.asunto }}
+    </div>
+  </div>
+
   <!-- Header Principal -->
   <div class="analytics-header">
     <div class="header-title">

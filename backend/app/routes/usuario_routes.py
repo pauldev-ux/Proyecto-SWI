@@ -40,7 +40,24 @@ async def registrar_usuario(
             username=usuario.username,
             nombre=usuario.nombre,
             contraseña=usuario.contraseña,
-            rol=RolUsuarioEnum.FUNCIONARIO.value
+            rol=RolUsuarioEnum.CLIENTE.value
+        )
+        return serializar_usuario(nuevo_usuario)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/", response_model=UsuarioSchema, status_code=status.HTTP_201_CREATED)
+async def crear_usuario(
+    usuario: UsuarioCreateSchema,
+    service: UsuarioService = Depends(get_usuario_service)
+):
+    try:
+        nuevo_usuario = await service.crear_usuario(
+            username=usuario.username,
+            nombre=usuario.nombre,
+            contraseña=usuario.contraseña,
+            rol=usuario.rol.value,
+            departamento=usuario.departamento
         )
         return serializar_usuario(nuevo_usuario)
     except ValueError as e:

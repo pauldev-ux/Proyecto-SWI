@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { UsuariosService, Usuario, UsuarioCreate, UsuarioUpdate } from '../../services/usuarios.service';
+import { DepartamentoService } from '../../services/departamento.service';
+import { Departamento } from '../../models';
 
 @Component({
   selector: 'app-usuarios',
@@ -8,6 +10,7 @@ import { UsuariosService, Usuario, UsuarioCreate, UsuarioUpdate } from '../../se
 })
 export class UsuariosComponent implements OnInit {
   usuarios: Usuario[] = [];
+  departamentos: Departamento[] = [];
   cargando = false;
   error: string | null = null;
   
@@ -28,14 +31,36 @@ export class UsuariosComponent implements OnInit {
 
   roles = [
     { valor: 'admin', label: 'Administrador' },
-    { valor: 'diseñador', label: 'Diseñador' },
+    { valor: 'cliente', label: 'Cliente' },
     { valor: 'funcionario', label: 'Funcionario' }
   ];
 
-  constructor(private usuariosService: UsuariosService) { }
+  constructor(
+    private usuariosService: UsuariosService,
+    private departamentoService: DepartamentoService
+  ) { }
 
   ngOnInit(): void {
     this.cargarUsuarios();
+    this.cargarDepartamentos();
+  }
+
+  cargarDepartamentos(): void {
+    this.departamentoService.listar(true).subscribe({
+      next: (data) => {
+        this.departamentos = data || [];
+      },
+      error: (err) => {
+        console.error('Error al cargar departamentos', err);
+        this.departamentos = [];
+      }
+    });
+  }
+
+  onRolChange(): void {
+    if (this.formulario.rol !== 'funcionario') {
+      this.formulario.departamento = '';
+    }
   }
 
   cargarUsuarios(): void {
@@ -86,6 +111,11 @@ export class UsuariosComponent implements OnInit {
   guardarUsuario(): void {
     if (!this.formulario.nombre || !this.formulario.username) {
       this.error = 'Nombre y usuario son requeridos';
+      return;
+    }
+
+    if (this.formulario.rol === 'funcionario' && !this.formulario.departamento) {
+      this.error = 'El departamento es obligatorio para funcionarios';
       return;
     }
 
@@ -183,7 +213,7 @@ export class UsuariosComponent implements OnInit {
     switch (rol) {
       case 'admin':
         return '#e74c3c';
-      case 'diseñador':
+      case 'cliente':
         return '#3498db';
       case 'funcionario':
         return '#27ae60';

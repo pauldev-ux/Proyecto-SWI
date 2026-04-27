@@ -49,6 +49,10 @@ export class UsuarioService {
     return this.usuarioActual.asObservable();
   }
 
+  obtenerUsuarioActualValue(): Usuario | null {
+    return this.usuarioActual.value;
+  }
+
   obtenerToken(): string {
     return this.tokenActual.value || localStorage.getItem('token') || '';
   }

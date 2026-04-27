@@ -422,6 +422,11 @@
   margin-top: 6px;
 }
 
+.required {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
 .confirm-message {
   font-size: 16px;
   color: #2c3e50;

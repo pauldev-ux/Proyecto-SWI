@@ -5,7 +5,7 @@ from datetime import datetime
 
 class RolUsuarioEnum(str, Enum):
     ADMIN = "admin"
-    DISEÑADOR = "diseñador"
+    CLIENTE = "cliente"
     FUNCIONARIO = "funcionario"
 
 class UsuarioRegistroSchema(BaseModel):
