@@ -8,6 +8,263 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.analytics-search-card {
+  margin: 1.5rem 3rem 0;
+  background: white;
+  border-radius: 22px;
+  box-shadow: 0 20px 60px rgba(20, 28, 65, 0.07);
+  padding: 1.8rem;
+}
+
+.search-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  color: #65748b;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.analytics-search-card h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #1b264d;
+}
+
+.search-description {
+  margin: 0.5rem 0 0 0;
+  color: #667085;
+  max-width: 48rem;
+}
+
+.search-card-body {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.input-search {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid #dfe3ea;
+  padding: 1rem 1.2rem;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-search:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.12);
+}
+
+.search-result-card {
+  background: #f8fbff;
+  border-radius: 18px;
+  padding: 1.15rem 1.4rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.result-label {
+  font-size: 0.95rem;
+  color: #344054;
+  font-weight: 700;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #334155;
+  font-size: 0.96rem;
+}
+
+.summary-card,
+.flujos-card {
+  background: white;
+  border-radius: 22px;
+  box-shadow: 0 12px 40px rgba(45, 64, 98, 0.08);
+  padding: 1.5rem;
+}
+
+.analytics-summary-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+  margin: 1.5rem 3rem 0;
+}
+
+.summary-title {
+  margin: 0 0 1rem;
+  font-weight: 700;
+  color: #102a43;
+  font-size: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #f0f4f8;
+  color: #44546f;
+}
+
+.summary-item strong {
+  color: #102a43;
+}
+
+.pasos-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.paso-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0.95rem 1rem;
+  background: #fff;
+}
+
+.paso-label {
+  color: #667085;
+  font-weight: 700;
+}
+
+.paso-depto {
+  font-weight: 600;
+  color: #102a43;
+}
+
+.paso-status {
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.diagram-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin: 1.5rem 3rem 3rem;
+}
+
+.diagram-card,
+.progress-card {
+  background: white;
+  border-radius: 22px;
+  box-shadow: 0 12px 40px rgba(45, 64, 98, 0.08);
+  padding: 1.6rem;
+}
+
+.diagram-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.diagram-tag {
+  display: inline-flex;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(102, 126, 234, 0.12);
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.diagram-body {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.canvas-wrapper {
+  background: #f8fbff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  padding: 1rem;
+}
+
+.canvas-editor {
+  width: 100%;
+  min-height: 520px;
+  border-radius: 16px;
+  display: block;
+  border: 2px solid #ccc;
+}
+
+.diagram-legend {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: #f8f9fb;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-completado { background: #27ae60; }
+.legend-actual { background: #f39c12; }
+.legend-pendiente { background: #95a5a6; }
+.legend-observado { background: #d35400; }
+
+.badge-next {
+  background: #ffeed9;
+  color: #b45309;
+}
+
+.manual-search-row {
+  display: flex;
+  gap: 10px;
+}
+
+
+
+.badge-current,
+.badge {
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid #fecaca;
+}
+
 /* ==================== HEADER PRINCIPAL ==================== */
 .analytics-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

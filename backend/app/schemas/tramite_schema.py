@@ -9,6 +9,7 @@ class EstadoTramiteEnum(str, Enum):
     ACEPTADO = "aceptado"
     COMPLETADO = "completado"
     RECHAZADO = "rechazado"
+    OBSERVADO = "observado"
 
 class PrioridadEnum(str, Enum):
     BAJA = "baja"

@@ -66,7 +66,7 @@ export interface Tramite {
   asunto: string;
   departamento?: string;
   ruta_departamentos?: string[];
-  estado: 'solicitado' | 'en_proceso' | 'aceptado' | 'completado' | 'rechazado';
+  estado: 'solicitado' | 'en_proceso' | 'aceptado' | 'completado' | 'rechazado' | 'observado';
   prioridad: 'baja' | 'normal' | 'alta' | 'urgente';
   usuario_asignado?: string;
   fecha_creacion?: Date;

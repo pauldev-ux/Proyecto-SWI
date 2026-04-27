@@ -108,7 +108,6 @@ class TramiteService:
 
             flujo = tramite.get("ruta_departamentos") or []
             departamento_actual = tramite.get("departamento")
-            estado_actual = tramite.get("estado")
             cambios: Dict[str, Any] = {"estado": nuevo_estado, "fecha_actualizacion": datetime.utcnow()}
 
             if nuevo_estado == "aceptado" and flujo:
@@ -122,6 +121,14 @@ class TramiteService:
                 elif flujo:
                     cambios["departamento"] = flujo[0]
                     cambios["estado"] = "en_proceso"
+
+            # Si el trámite es observado o rechazado, permanece en el departamento actual
+            if nuevo_estado in ["observado", "rechazado"]:
+                cambios["departamento"] = departamento_actual
+
+            # Si se marca en_proceso, conservar el departamento actual y avanzar no se aplica
+            if nuevo_estado == "en_proceso":
+                cambios["departamento"] = departamento_actual
 
             resultado = await self.collection.find_one_and_update(
                 {"_id": ObjectId(tramite_id)},

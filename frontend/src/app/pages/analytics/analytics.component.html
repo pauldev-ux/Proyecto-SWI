@@ -1,273 +1,91 @@
 <div class="analytics-container">
-  <!-- Filtro de Trámite -->
-  <div class="filtro-tramite">
-    <div class="filtro-header">
-      <h2>🔍 Buscar Trámite por Referencia</h2>
-    </div>
-    <div class="filtro-form">
-      <input 
-        type="text" 
-        [(ngModel)]="referenciaBusqueda" 
-        placeholder="Ingrese código o referencia del trámite (ej: codigo85)"
-        class="filtro-input"
-        (keyup.enter)="buscarTramite()"
-      />
-      <button 
-        class="btn-buscar" 
-        (click)="buscarTramite()" 
-        [disabled]="cargando"
-      >
-        {{ cargando ? 'Buscando...' : '🔍 Buscar' }}
-      </button>
-    </div>
-    <div *ngIf="error" class="error-message">
-      {{ error }}
-    </div>
-    <div *ngIf="tramiteActual" class="tramite-info">
-      <strong>Trámite encontrado:</strong> {{ tramiteActual.referencia }} - {{ tramiteActual.asunto }}
-    </div>
-  </div>
-
-  <!-- Header Principal -->
-  <div class="analytics-header">
-    <div class="header-title">
-      <h1>📊 Editor Interactivo de Diagramas de Trámites</h1>
-      <p class="subtitle">Organiza y visualiza flujos de departamentos de forma dinámica</p>
-    </div>
-    <div class="header-actions">
-      <button class="btn-action btn-primary" (click)="agregarNodo()" title="Agregar nueva actividad">
-        ➕ Nodo
-      </button>
-      <button class="btn-action btn-secondary" (click)="agregarConexion()" title="Crear conexión entre nodos">
-        🔗 Conexión
-      </button>
-      <button class="btn-action btn-warning" (click)="exportarJSON()" title="Descargar diagrama en JSON">
-        💾 Exportar
-      </button>
-      <button class="btn-action btn-danger" (click)="limpiarDiagrama()" title="Borrar todo">
-        🗑️ Limpiar
-      </button>
-    </div>
-  </div>
-
-  <!-- Headers de Departamentos -->
-  <div class="departamentos-header">
-    <div class="dept-legend">
-      <span class="legend-label">Departamentos:</span>
-      <div class="legend-items">
-        <div *ngFor="let dept of departamentos" class="legend-item">
-          <span class="legend-color" [style.background-color]="dept.color"></span>
-          <span class="legend-text">{{ dept.icono }} {{ dept.nombre }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Canvas Editor con Columnas Visuales -->
-  <div class="editor-wrapper">
-    <div class="departamentos-columnas">
-      <div *ngFor="let dept of departamentos" class="columna-departamento">
-        <div class="columna-header" [style.border-left-color]="dept.color">
-          <span class="dept-icono">{{ dept.icono }}</span>
-          <span class="dept-nombre">{{ dept.nombre }}</span>
-          <span class="dept-count">({{ (obtenerNodosEnDepartamento(dept.id) | slice:0).length }})</span>
-        </div>
-      </div>
-    </div>
-    
-    <canvas #canvas class="canvas-editor" width="1400" height="700"></canvas>
-    
-    <!-- Instructions -->
-    <div class="instructions">
-      <span>🖱️ Arrastra nodos • 🖱️🖱️ Doble-clic para editar • ⌫ DEL para eliminar • 👆 Clic para seleccionar</span>
-    </div>
-  </div>
-
-  <!-- Panel Información -->
-  <div class="info-panels">
-    <!-- Nodo Seleccionado -->
-    <div *ngIf="nodoSeleccionado" class="selected-panel">
-      <div class="panel-header">
-        <h3>📌 Nodo Seleccionado</h3>
-        <button class="btn-close" (click)="nodoSeleccionado = null">✕</button>
-      </div>
-      <div class="panel-content">
-        <div class="info-row">
-          <label>Nombre:</label>
-          <span>{{ nodoSeleccionado.nombre }}</span>
-        </div>
-        <div class="info-row">
-          <label>Departamento:</label>
-          <span [style.color]="obtenerColorDepartamento(nodoSeleccionado.idDepartamento)" class="dept-badge">
-            {{ obtenerNombreDepartamento(nodoSeleccionado.idDepartamento) }}
-          </span>
-        </div>
-        <div class="info-row">
-          <label>Trámite:</label>
-          <span>{{ nodoSeleccionado.idTramite }}</span>
-        </div>
-        <div class="info-row">
-          <label>Estado:</label>
-          <span [style.color]="obtenerEstadoColor(nodoSeleccionado.estado)" class="estado-badge">
-            {{ nodoSeleccionado.estado | uppercase }}
-          </span>
-        </div>
-        <div class="info-row">
-          <label>Posición:</label>
-          <span>X: {{ nodoSeleccionado.x | number:'0.0-0' }}, Y: {{ nodoSeleccionado.y | number:'0.0-0' }}</span>
-        </div>
-        <div class="panel-buttons">
-          <button class="btn-edit" (click)="editarNodo()">
-            ✏️ Editar
-          </button>
-          <button class="btn-delete" (click)="eliminarNodo()">
-            🗑️ Eliminar
-          </button>
-        </div>
+  <section class="analytics-search-card">
+    <div class="search-card-header">
+      <div>
+        <p class="eyebrow">Analytics</p>
+        <h1>Consulta de Flujo de Trámite</h1>
+        <p class="search-description">Selecciona un trámite o ingresa su referencia para ver su flujo completo.</p>
       </div>
     </div>
 
-    <!-- Lista de Conexiones -->
-    <div class="connections-list">
-      <div class="list-header">
-        <h3>🔗 Conexiones ({{ conexiones.length }})</h3>
-      </div>
-      <div *ngIf="conexiones.length === 0" class="empty-list">
-        No hay conexiones. Crea una con el botón "🔗 Conexión"
-      </div>
-      <div *ngFor="let conn of conexiones" class="connection-item">
-        <div class="conn-info">
-          <span class="node-from">{{ obtenerNombreNodo(conn.origen) }}</span>
-          <span class="conn-arrow">→</span>
-          <span class="node-to">{{ obtenerNombreNodo(conn.destino) }}</span>
-          <span class="conn-label" *ngIf="conn.etiqueta">"{{ conn.etiqueta }}"</span>
-          <span [class.iterativa]="conn.tipo === 'iterativa'" class="conn-type">
-            {{ conn.tipo === 'secuencial' ? '▶' : '⟲' }}
-          </span>
-        </div>
-        <button class="btn-delete-small" (click)="eliminarConexion(conn.id)">✕</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal - Crear/Editar Nodo -->
-  <div *ngIf="modalAbierto" class="modal-overlay" (click)="cerrarModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ nodoEnEdicion ? '✏️ Editar Nodo' : '➕ Crear Nodo' }}</h2>
-        <button class="btn-close" (click)="cerrarModal()">✕</button>
-      </div>
-
-      <div class="modal-body">
+    <div class="search-card-body">
+      <div class="form-row">
         <div class="form-group">
-          <label>Nombre de Actividad *</label>
-          <input 
-            type="text" 
-            [(ngModel)]="formularioNodo.nombre"
-            placeholder="Ej: Revisar Documentos"
-            class="form-input"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Departamento *</label>
-          <select [(ngModel)]="formularioNodo.idDepartamento" class="form-input">
-            <option *ngFor="let dept of departamentos" [value]="dept.id">{{ dept.icono }} {{ dept.nombre }}</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Ícono</label>
-          <input 
-            type="text" 
-            [(ngModel)]="formularioNodo.icono"
-            placeholder="Ej: 📋"
-            class="form-input"
-            maxlength="2"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Estado</label>
-          <select [(ngModel)]="formularioNodo.estado" class="form-input">
-            <option value="pendiente">⏳ Pendiente</option>
-            <option value="en_proceso">▶️ En Proceso</option>
-            <option value="completado">✓ Completado</option>
-            <option value="rechazado">✗ Rechazado</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Descripción</label>
-          <textarea 
-            [(ngModel)]="formularioNodo.descripcion"
-            placeholder="Descripción opcional"
-            class="form-input"
-            rows="2"
-          ></textarea>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
-        <button class="btn-primary" (click)="guardarNodo()">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal - Crear Conexión -->
-  <div *ngIf="modalConexion" class="modal-overlay" (click)="cerrarModalConexion()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>🔗 Crear Conexión</h2>
-        <button class="btn-close" (click)="cerrarModalConexion()">✕</button>
-      </div>
-
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Desde (Nodo Origen) *</label>
-          <select [(ngModel)]="nuevaConexion.origen" class="form-input">
-            <option value="">Seleccionar...</option>
-            <option *ngFor="let nodo of nodos" [value]="nodo.id">
-              {{ nodo.icono }} {{ nodo.nombre }} ({{ obtenerNombreDepartamento(nodo.idDepartamento) }})
+          <label>Seleccionar Trámite Rápido:</label>
+          <select class="input-search" (change)="onTramiteSeleccionado($event)">
+            <option value="">— Elija un trámite —</option>
+            <option *ngFor="let t of tramitesDisponibles" [value]="t.referencia">
+              {{ t.referencia }} - {{ t.cliente }}
             </option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Hacia (Nodo Destino) *</label>
-          <select [(ngModel)]="nuevaConexion.destino" class="form-input">
-            <option value="">Seleccionar...</option>
-            <option *ngFor="let nodo of nodos" [value]="nodo.id">
-              {{ nodo.icono }} {{ nodo.nombre }} ({{ obtenerNombreDepartamento(nodo.idDepartamento) }})
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Etiqueta</label>
-          <input 
-            type="text" 
-            [(ngModel)]="nuevaConexion.etiqueta"
-            placeholder="Ej: Aprobado, Con Errores"
-            class="form-input"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Tipo de Flujo</label>
-          <select [(ngModel)]="nuevaConexion.tipo" class="form-input">
-            <option value="secuencial">▶ Secuencial (línea directa)</option>
-            <option value="iterativa">⟲ Iterativa (retorno/ciclo)</option>
-          </select>
+          <label>O buscar por referencia manual:</label>
+          <div class="manual-search-row">
+            <input
+              type="text"
+              [(ngModel)]="referenciaBusqueda"
+              placeholder="Ej: TRM-2024-001"
+              class="input-search"
+              (keyup.enter)="buscarTramite()"
+            />
+            <button class="btn-primary" (click)="buscarTramite()" [disabled]="cargando">
+              {{ cargando ? 'Buscando...' : 'Consultar' }}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn-secondary" (click)="cerrarModalConexion()">Cancelar</button>
-        <button class="btn-primary" (click)="guardarConexion()">Crear</button>
+      <div *ngIf="error" class="alert alert-error">
+        {{ error }}
+      </div>
+
+      <div *ngIf="tramiteActual" class="search-result-card">
+        <div class="result-label">Resumen del trámite</div>
+        <div class="result-row"><strong>Referencia:</strong> {{ tramiteActual.referencia }}</div>
+        <div class="result-row"><strong>Asunto:</strong> {{ tramiteActual.asunto }}</div>
+        <div class="result-row"><strong>Solicitante:</strong> {{ tramiteActual.cliente }}</div>
+        <div class="result-row"><strong>Departamento actual:</strong> <span class="badge badge-current">{{ tramiteActual.departamento || 'Sin asignar' }}</span></div>
+        <div class="result-row"><strong>Estado actual:</strong> <span class="badge" [style.background-color]="obtenerColorPaso(tramiteActual.estado)">{{ obtenerEstadoBadge(tramiteActual.estado) }}</span></div>
+        <div class="result-row" *ngIf="siguienteDepartamento"><strong>Siguiente departamento:</strong> <span class="badge badge-next">{{ siguienteDepartamento }}</span></div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section *ngIf="tramiteActual && departamentos.length > 0" class="diagram-section">
+    <div class="diagram-card">
+      <div class="diagram-card-header">
+        <div>
+          <div class="diagram-tag">Diagrama automático</div>
+          <h2>Flujo del trámite</h2>
+          <p class="diagram-description">El sistema dibuja automáticamente los departamentos y conexiones según la ruta del trámite.</p>
+        </div>
+      </div>
+
+      <div class="diagram-body">
+        <div class="canvas-wrapper">
+          <canvas #canvas class="canvas-editor"></canvas>
+        </div>
+        <div class="diagram-legend">
+          <div class="legend-item">
+            <span class="legend-dot legend-completado"></span>
+            <span>Completado</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot legend-actual"></span>
+            <span>Actual</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot legend-pendiente"></span>
+            <span>Pendiente</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot legend-observado"></span>
+            <span>Observado / Rechazado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
-

@@ -20,6 +20,12 @@ export interface UsuarioCreate {
   departamento?: string;
 }
 
+export interface UsuarioRegistro {
+  username: string;
+  nombre: string;
+  contraseña: string;
+}
+
 export interface UsuarioUpdate {
   nombre?: string;
   username?: string;
@@ -34,10 +40,15 @@ export interface UsuarioUpdate {
 export class UsuariosService {
   private apiUrl = 'http://localhost:8000/api/v1/usuarios';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  listarUsuarios(): Observable<Usuario[]> {
-    return this.http.get<Usuario[]>(this.apiUrl);
+  listarUsuarios(rol?: string): Observable<Usuario[]> {
+    const url = rol ? `${this.apiUrl}?rol=${encodeURIComponent(rol)}` : this.apiUrl;
+    return this.http.get<Usuario[]>(url);
+  }
+
+  listarClientes(): Observable<Usuario[]> {
+    return this.http.get<Usuario[]>(`${this.apiUrl}?rol=cliente`);
   }
 
   obtenerUsuario(id: string): Observable<Usuario> {
@@ -48,11 +59,15 @@ export class UsuariosService {
     return this.http.post<Usuario>(this.apiUrl, usuario);
   }
 
+  registrarCliente(usuario: UsuarioRegistro): Observable<Usuario> {
+    return this.http.post<Usuario>(`${this.apiUrl}/registro`, usuario);
+  }
+
   actualizarUsuario(id: string, datos: UsuarioUpdate): Observable<Usuario> {
     return this.http.put<Usuario>(`${this.apiUrl}/${id}`, datos);
   }
 
-  eliminarUsuario(id: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+  eliminarUsuario(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

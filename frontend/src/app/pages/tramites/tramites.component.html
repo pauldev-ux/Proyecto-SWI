@@ -2,7 +2,7 @@
   <!-- Header -->
   <div class="tramites-header">
     <h1>📋 Gestión de Trámites</h1>
-    <button class="btn-primary" (click)="abrirFormulario()" *ngIf="!mostrarFormulario">
+    <button class="btn-primary" (click)="abrirFormulario()" *ngIf="!mostrarFormulario && usuarioActual?.rol === 'admin'">
       ➕ Nuevo Trámite
     </button>
   </div>
@@ -196,9 +196,9 @@
           <th>Asunto</th>
           <th>Departamento</th>
           <th>Estado</th>
+          <th>Ruta</th>
+          <th>Próximo</th>
           <th>Prioridad</th>
-          <th>Asignado</th>
-          <th>Creado</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -223,6 +223,12 @@
             </span>
           </td>
           <td>
+            <span class="badge badge-route">{{ obtenerRutaTexto(tramite) }}</span>
+          </td>
+          <td>
+            <span class="badge badge-next">{{ obtenerDepartamentoSiguiente(tramite) }}</span>
+          </td>
+          <td>
             <span class="badge" [style.background-color]="obtenerColorPrioridad(tramite.prioridad)">
               {{ tramite.prioridad | titlecase }}
             </span>
@@ -238,6 +244,7 @@
           </td>
           <td class="actions-cell">
             <button 
+              *ngIf="usuarioActual?.rol === 'admin'"
               class="btn-action btn-edit" 
               (click)="editar(tramite)"
               title="Editar"
@@ -265,6 +272,7 @@
               </div>
             </div>
             <button 
+              *ngIf="usuarioActual?.rol === 'admin'"
               class="btn-action btn-delete" 
               (click)="eliminar(tramite.id!)"
               title="Eliminar"

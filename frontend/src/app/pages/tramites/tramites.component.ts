@@ -26,7 +26,7 @@ export class TramitesComponent implements OnInit {
   filtrosAbiertos = false;
   usuarioActual: Usuario | null = null;
 
-  estados = ['solicitado', 'en_proceso', 'aceptado', 'completado', 'rechazado'];
+  estados = ['solicitado', 'en_proceso', 'aceptado', 'completado', 'rechazado', 'observado'];
   prioridades = ['baja', 'normal', 'alta', 'urgente'];
 
   constructor(
@@ -98,7 +98,17 @@ export class TramitesComponent implements OnInit {
     if (this.usuarioActual) {
       if (this.usuarioActual.rol === 'funcionario' && this.usuarioActual.departamento) {
         // Funcionarios solo ven trámites de su departamento
-        departamentoFiltro = this.usuarioActual.departamento;
+        this.tramiteService.listarPorDepartamento(this.usuarioActual.departamento).subscribe({
+          next: (data) => {
+            this.tramites = data;
+            this.cargando = false;
+          },
+          error: (err) => {
+            this.error = 'Error al cargar trámites';
+            this.cargando = false;
+          }
+        });
+        return;
       } else if (this.usuarioActual.rol === 'cliente') {
         // Clientes solo ven sus propios trámites
         this.tramiteService.listarPorCliente(this.usuarioActual.nombre).subscribe({
@@ -274,6 +284,20 @@ export class TramitesComponent implements OnInit {
       'urgente': '#e74c3c'
     };
     return colores[prioridad] || '#95a5a6';
+  }
+
+  obtenerRutaTexto(tramite: Tramite): string {
+    return tramite.ruta_departamentos?.length ? tramite.ruta_departamentos.join(' → ') : 'Sin ruta definida';
+  }
+
+  obtenerDepartamentoSiguiente(tramite: Tramite): string {
+    const ruta = tramite.ruta_departamentos || [];
+    const actual = tramite.departamento;
+    const indice = actual ? ruta.indexOf(actual) : -1;
+    if (indice >= 0 && indice < ruta.length - 1) {
+      return ruta[indice + 1];
+    }
+    return 'Ninguno';
   }
 
   limpiarMensajes(): void {

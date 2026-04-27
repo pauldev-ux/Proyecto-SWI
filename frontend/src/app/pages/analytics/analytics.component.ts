@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, OnDestroy, AfterViewInit } from '@angular/core';
 import { TramiteService } from '../../services/tramite.service';
 import { Tramite } from '../../models';
 
@@ -17,7 +17,7 @@ export interface Nodo {
   nombre: string;
   idDepartamento: string;
   idTramite: string;
-  estado: 'pendiente' | 'en_proceso' | 'completado' | 'rechazado';
+  estado: 'pendiente' | 'en_proceso' | 'completado' | 'rechazado' | 'observado';
   icono: string;
   descripcion: string;
   x: number;
@@ -52,7 +52,7 @@ export interface LayoutInfo {
   templateUrl: './analytics.component.html',
   styleUrls: ['./analytics.component.css']
 })
-export class AnalyticsComponent implements OnInit {
+export class AnalyticsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
 
   // ===== FILTRO =====
@@ -65,106 +65,137 @@ export class AnalyticsComponent implements OnInit {
   departamentos: Departamento[] = [];
   nodos: Nodo[] = [];
   conexiones: Conexion[] = [];
-
-  // ===== ESTADO DEL EDITOR =====
-  nodoSeleccionado: Nodo | null = null;
-  nodoEnEdicion: Nodo | null = null;
-  formularioNodo: Nodo = this.crearNodoVacio();
-
+  pasosFlujo: Array<{ numero: number; departamento: string; estado: string; actual: boolean; completado: boolean }> = [];
+  tramitesDisponibles: Tramite[] = []; // Para el dropdown
+  siguienteDepartamento: string | null = null;
+  
   // ===== CANVAS =====
   canvas: HTMLCanvasElement | null = null;
   ctx: CanvasRenderingContext2D | null = null;
   layoutInfo: LayoutInfo = this.crearLayoutInfo();
-
-  // ===== MODAL =====
-  modalAbierto: boolean = false;
-  modalConexion: boolean = false;
-  nuevaConexion: any = { origen: '', destino: '', etiqueta: '', tipo: 'secuencial', idTramite: '' };
-
-  // ===== DRAG & DROP =====
-  arrastrando: boolean = false;
-  offsetX: number = 0;
-  offsetY: number = 0;
-
-  // ===== TRAMITES =====
-  tramites: string[] = [];
-  tramiteSeleccionado: string = '';
+  
+  private resizeListener = () => {
+    this.ajustarTamanoCanvas();
+    this.dibujar();
+  };
 
   constructor(private tramiteService: TramiteService) {}
 
   ngOnInit(): void {
-    this.cargarDepartamentos();
-    setTimeout(() => {
-      this.inicializarCanvas();
-      this.dibujar();
-    }, 100);
+    this.cargarTramitesDisponibles();
+    
+    window.addEventListener('resize', this.resizeListener);
   }
 
-  // ===================== INICIALIZACIÓN ======================
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.inicializarCanvas();
+      this.ajustarTamanoCanvas();
+      this.dibujar();
+    }, 500);
+  }
 
-  cargarDepartamentos(): void {
-    // En producción: this.departamentos = await this.departamentoService.obtener();
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeListener);
+  }
+
+  cargarTramitesDisponibles(): void {
+    this.tramiteService.listar().subscribe({
+      next: (tramites) => {
+        this.tramitesDisponibles = tramites;
+      },
+      error: (err) => console.error('Error al cargar trámites disponibles', err)
+    });
+  }
+
+  onTramiteSeleccionado(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    if (target.value) {
+      this.referenciaBusqueda = target.value;
+      this.buscarTramite();
+    }
   }
 
   buscarTramite(): void {
     if (!this.referenciaBusqueda.trim()) {
-      this.error = 'Ingrese una referencia de trámite';
+      this.error = 'Ingrese o seleccione una referencia de trámite';
       return;
     }
 
     this.cargando = true;
     this.error = '';
+    this.tramiteActual = null;
+    this.nodos = [];
+    this.conexiones = [];
+    this.pasosFlujo = [];
+
     this.tramiteService.obtenerPorReferencia(this.referenciaBusqueda.trim()).subscribe({
       next: (tramite) => {
         this.tramiteActual = tramite;
-        this.cargarDatosTramite(tramite);
-        this.cargando = false;
-        this.dibujar();
+        this.tramiteService.obtenerFlujoPorReferencia(tramite.referencia).subscribe({
+          next: (flujo) => {
+            this.pasosFlujo = flujo.pasos || [];
+            this.siguienteDepartamento = this.calcularSiguienteDepartamento(tramite, flujo);
+            this.cargarDatosTramite(tramite, this.pasosFlujo);
+            this.cargando = false;
+            setTimeout(() => {
+              if (!this.ctx) this.inicializarCanvas();
+              this.ajustarTamanoCanvas();
+              this.dibujar();
+            }, 500);
+          },
+          error: () => {
+            this.error = 'No se pudo cargar el flujo del trámite';
+            this.cargando = false;
+          }
+        });
       },
-      error: (err) => {
-        this.error = 'Trámite no encontrado';
+      error: () => {
+        this.error = 'No se encontró el trámite con la referencia ingresada.';
         this.tramiteActual = null;
         this.nodos = [];
         this.conexiones = [];
+        this.pasosFlujo = [];
         this.cargando = false;
         this.dibujar();
       }
     });
   }
 
-  cargarDatosTramite(tramite: Tramite): void {
-    // Cargar nodos y conexiones basados en la ruta_departamentos del trámite
+  cargarDatosTramite(tramite: Tramite, pasos: Array<{ numero: number; departamento: string; estado: string; actual: boolean; completado: boolean }> = []): void {
     this.nodos = [];
     this.conexiones = [];
+    this.pasosFlujo = pasos;
 
-    if (!tramite) return;
-
-    const tramiteId = tramite.id ?? '';
-    const ruta = tramite.ruta_departamentos || [];
-    if (ruta.length === 0) {
-      // Si no hay ruta definida, mostrar solo el departamento actual
-      ruta.push(tramite.departamento || 'Sin Asignar');
+    if (!tramite) {
+      this.departamentos = [];
+      return;
     }
 
-    // Crear nodos para cada departamento en la ruta
+    const tramiteId = tramite.id ?? '';
+    const ruta = tramite.ruta_departamentos && tramite.ruta_departamentos.length > 0
+      ? tramite.ruta_departamentos
+      : [tramite.departamento || 'Sin Asignar'];
+
+    this.departamentos = this.crearDepartamentosDesdeRuta(ruta, tramite.departamento);
+
     ruta.forEach((deptNombre, index) => {
-      const deptId = `d${index + 1}`;
-      const estado = this.determinarEstadoNodo(tramite, index, ruta.length);
+      const dept = this.departamentos[index];
+      const estado = this.determinarEstadoNodo(tramite, deptNombre, ruta);
 
       this.nodos.push({
         id: `n${index + 1}`,
-        nombre: `Paso ${index + 1}: ${deptNombre}`,
-        idDepartamento: deptId,
+        nombre: `Paso ${index + 1}`,
+        idDepartamento: dept.id,
         idTramite: tramiteId,
         estado: estado,
         icono: this.obtenerIconoEstado(estado),
-        descripcion: `Trámite en ${deptNombre}`,
-        x: 0, y: 0, ancho: 140, alto: 80,
+        descripcion: `${deptNombre}`,
+        x: 0, y: 0, ancho: 160, alto: 90,
         ordenEnDept: 1
       });
     });
 
-    // Crear conexiones secuenciales
     for (let i = 0; i < this.nodos.length - 1; i++) {
       this.conexiones.push({
         id: `c${i + 1}`,
@@ -177,24 +208,30 @@ export class AnalyticsComponent implements OnInit {
     }
   }
 
-  determinarEstadoNodo(tramite: Tramite, index: number, totalPasos: number): 'pendiente' | 'en_proceso' | 'completado' | 'rechazado' {
+  determinarEstadoNodo(tramite: Tramite, departamento: string, ruta: string[]): 'pendiente' | 'en_proceso' | 'completado' | 'rechazado' | 'observado' {
     const estado = tramite.estado;
-    const ruta = tramite.ruta_departamentos || [];
     const deptActual = tramite.departamento;
+    const indiceActual = deptActual && ruta.indexOf(deptActual) >= 0 ? ruta.indexOf(deptActual) : -1;
+    const indiceNodo = ruta.indexOf(departamento);
 
-    if (estado === 'rechazado') return 'rechazado';
+    if (estado === 'rechazado' && deptActual === departamento) return 'rechazado';
+    if (estado === 'observado' && deptActual === departamento) return 'observado';
     if (estado === 'completado') return 'completado';
-
-    // Si estamos en el último paso y el estado es aceptado, marcar como completado
-    if (index === totalPasos - 1 && estado === 'aceptado') return 'completado';
-
-    // Si el departamento actual coincide con este paso, está en proceso
-    if (deptActual && ruta[index] === deptActual) return 'en_proceso';
-
-    // Si el índice es menor que la posición del departamento actual, está completado
-    if (deptActual && ruta.indexOf(deptActual) > index) return 'completado';
+    if (estado === 'aceptado' && indiceNodo === ruta.length - 1) return 'completado';
+    if (indiceNodo === indiceActual) return 'en_proceso';
+    if (indiceActual > indiceNodo) return 'completado';
 
     return 'pendiente';
+  }
+
+  calcularSiguienteDepartamento(tramite: Tramite, flujo: any): string | null {
+    const ruta = flujo.ruta_departamentos || tramite.ruta_departamentos || [];
+    const actual = tramite.departamento;
+    const indiceActual = ruta.indexOf(actual);
+    if (indiceActual >= 0 && indiceActual < ruta.length - 1) {
+      return ruta[indiceActual + 1];
+    }
+    return null;
   }
 
   obtenerIconoEstado(estado: string): string {
@@ -202,8 +239,42 @@ export class AnalyticsComponent implements OnInit {
       case 'completado': return '✅';
       case 'en_proceso': return '🔄';
       case 'rechazado': return '❌';
+      case 'observado': return '⚠️';
       default: return '⏳';
     }
+  }
+
+  crearDepartamentosDesdeRuta(ruta: string[], actual?: string): Departamento[] {
+    const palette = ['#476efb', '#ff9a3c', '#28c76f', '#9b51e0', '#f02d3a', '#0bb783'];
+    return ruta.map((nombre, index) => ({
+      id: `d${index + 1}`,
+      nombre,
+      icono: ['🏁','📌','⚙️','🧾','✅','📍'][index] || '🏷️',
+      color: palette[index % palette.length],
+      orden: index + 1
+    }));
+  }
+
+  obtenerEstadoBadge(estado: string): string {
+    const estados: {[key: string]: string} = {
+      'pendiente': 'Pendiente',
+      'en_proceso': 'En Proceso',
+      'completado': 'Completado',
+      'rechazado': 'Rechazado',
+      'observado': 'Observado'
+    };
+    return estados[estado] || estado;
+  }
+
+  obtenerColorPaso(estado: string): string {
+    const colores: {[key: string]: string} = {
+      'pendiente': '#95a5a6',
+      'en_proceso': '#f39c12',
+      'completado': '#27ae60',
+      'rechazado': '#e74c3c',
+      'observado': '#d35400'
+    };
+    return colores[estado] || '#95a5a6';
   }
 
   crearLayoutInfo(): LayoutInfo {
@@ -219,57 +290,34 @@ export class AnalyticsComponent implements OnInit {
     };
   }
 
-  crearNodoVacio(): Nodo {
-    const deptActual = this.departamentos?.length > 0 ? this.departamentos[0] : null;
-    return {
-      id: `n${Date.now()}`,
-      nombre: '',
-      idDepartamento: deptActual?.id ?? '',
-      idTramite: this.tramiteSeleccionado ?? '',
-      estado: 'pendiente',
-      icono: '📋',
-      descripcion: '',
-      x: 0, y: 0,
-      ancho: 140, alto: 80,
-      ordenEnDept: 1
-    };
+  ajustarTamanoCanvas(): void {
+    if (this.canvasRef && this.canvasRef.nativeElement) {
+      const canvasEl = this.canvasRef.nativeElement;
+      const container = canvasEl.parentElement;
+      if (container) {
+        const containerWidth = container.clientWidth || 800;
+        const containerHeight = container.clientHeight || 500;
+        canvasEl.width = Math.max(800, containerWidth);
+        canvasEl.height = Math.max(500, containerHeight);
+      } else {
+        canvasEl.width = 800;
+        canvasEl.height = 500;
+      }
+    }
   }
 
-  // ===================== LAYOUT & CÁLCULO ======================
-
   calcularLayout(): void {
-    // Contar nodos por departamento
-    const nodosEnDept: { [deptId: string]: Nodo[] } = {};
-    this.departamentos.forEach(d => nodosEnDept[d.id] = []);
+    if (!this.departamentos.length) {
+      return;
+    }
 
-    this.nodos.forEach(nodo => {
-      if (!nodosEnDept[nodo.idDepartamento]) {
-        nodosEnDept[nodo.idDepartamento] = [];
-      }
-      nodosEnDept[nodo.idDepartamento].push(nodo);
-    });
-
-    // Ordenar nodos por trámite dentro de cada departamento
-    this.departamentos.forEach(d => {
-      const nododoDept = nodosEnDept[d.id];
-      nododoDept.sort((a, b) => {
-        if (a.idTramite !== b.idTramite) {
-          return a.idTramite.localeCompare(b.idTramite);
-        }
-        return (a.ordenEnDept || 0) - (b.ordenEnDept || 0);
-      });
-    });
-
+    const canvasWidth = this.canvas?.width || 1200;
     const numDepts = this.departamentos.length;
-    const canvasWidth = this.canvas?.width || 1400;
-    this.layoutInfo.columnWidth = Math.floor((canvasWidth - 40) / numDepts);
+    this.layoutInfo.columnWidth = Math.max(200, Math.floor((canvasWidth - 40) / numDepts));
 
-    let maxNodosEnFila = 0;
     this.departamentos.forEach((dept, deptIdx) => {
-      const nodosEnEsteDept = nodosEnDept[dept.id];
-      this.layoutInfo.nodosEnColumna[dept.id] = nodosEnEsteDept.length;
-      maxNodosEnFila = Math.max(maxNodosEnFila, nodosEnEsteDept.length);
-
+      const nodosEnEsteDept = this.nodos.filter(n => n.idDepartamento === dept.id);
+      
       nodosEnEsteDept.forEach((nodo, idx) => {
         const x = 20 + deptIdx * this.layoutInfo.columnWidth + 
                   (this.layoutInfo.columnWidth - this.layoutInfo.nodoWidth) / 2;
@@ -278,28 +326,14 @@ export class AnalyticsComponent implements OnInit {
         nodo.y = y;
       });
     });
-
-    this.layoutInfo.maxNodosEnFila = maxNodosEnFila;
   }
-
-  // ===================== UTILIDADES ======================
 
   obtenerDepartamento(id: string): Departamento | undefined {
     return this.departamentos.find(d => d.id === id);
   }
 
   obtenerNodosEnDepartamento(idDept: string): Nodo[] {
-    return this.nodos.filter(n => n.idDepartamento === idDept).sort((a, b) => {
-      if (a.idTramite !== b.idTramite) {
-        return a.idTramite.localeCompare(b.idTramite);
-      }
-      return (a.ordenEnDept || 0) - (b.ordenEnDept || 0);
-    });
-  }
-
-  obtenerNombreDepartamento(idDept: string): string {
-    const dept = this.obtenerDepartamento(idDept);
-    return dept ? dept.nombre : 'Desconocido';
+    return this.nodos.filter(n => n.idDepartamento === idDept);
   }
 
   obtenerColorDepartamento(idDept: string): string {
@@ -307,17 +341,13 @@ export class AnalyticsComponent implements OnInit {
     return dept ? dept.color : '#999999';
   }
 
-  obtenerNombreNodo(id: string): string {
-    const nodo = this.nodos.find(n => n.id === id);
-    return nodo ? nodo.nombre : 'Desconocido';
-  }
-
   obtenerEstadoColor(estado: string): string {
     const colores: {[key: string]: string} = {
       'pendiente': '#95a5a6',
       'en_proceso': '#f39c12',
       'completado': '#27ae60',
-      'rechazado': '#e74c3c'
+      'rechazado': '#e74c3c',
+      'observado': '#d35400'
     };
     return colores[estado] || '#95a5a6';
   }
@@ -326,12 +356,6 @@ export class AnalyticsComponent implements OnInit {
     this.canvas = this.canvasRef?.nativeElement;
     if (this.canvas) {
       this.ctx = this.canvas.getContext('2d');
-      this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
-      this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
-      this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
-      this.canvas.addEventListener('click', (e) => this.onClick(e));
-      this.canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
-      window.addEventListener('keydown', (e) => this.onKeyDown(e));
     }
   }
 
@@ -339,6 +363,16 @@ export class AnalyticsComponent implements OnInit {
     if (!this.ctx || !this.canvas) return;
 
     this.calcularLayout();
+    
+    // Limpiar canvas
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Dibujar un círculo rojo para probar que el canvas funciona
+    this.ctx.fillStyle = 'red';
+    this.ctx.beginPath();
+    this.ctx.arc(this.canvas.width / 2, this.canvas.height / 2, 50, 0, 2 * Math.PI);
+    this.ctx.fill();
+    
     this.dibujarFondoYGrid();
     this.dibujarLineasDepartamentos();
     this.dibujarConexiones();
@@ -348,8 +382,9 @@ export class AnalyticsComponent implements OnInit {
   dibujarFondoYGrid(): void {
     if (!this.ctx || !this.canvas) return;
 
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    // Fondo transparente para ver el wrapper
+    // this.ctx.fillStyle = '#ffffff';
+    // this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.ctx.strokeStyle = '#f5f5f5';
     this.ctx.lineWidth = 1;
@@ -420,13 +455,6 @@ export class AnalyticsComponent implements OnInit {
     this.ctx.stroke();
 
     this.dibujarFlecha(x2, y2, conexion.tipo === 'iterativa');
-
-    if (conexion.etiqueta) {
-      this.ctx.fillStyle = '#333';
-      this.ctx.font = 'bold 11px Arial';
-      this.ctx.textAlign = 'center';
-      this.ctx.fillText(conexion.etiqueta, x1 + (x2 - x1) / 2, midY - 10);
-    }
   }
 
   dibujarFlecha(x: number, y: number, iterativa: boolean = false): void {
@@ -454,7 +482,6 @@ export class AnalyticsComponent implements OnInit {
   dibujarNodo(nodo: Nodo): void {
     if (!this.ctx) return;
 
-    const seleccionado = this.nodoSeleccionado?.id === nodo.id;
     const colorBase = this.obtenerColorDepartamento(nodo.idDepartamento);
     const colorEstado = this.obtenerEstadoColor(nodo.estado);
 
@@ -464,13 +491,14 @@ export class AnalyticsComponent implements OnInit {
     this.dibujarRectRedondeado(
       nodo.x, nodo.y, nodo.ancho, nodo.alto,
       8,
-      seleccionado ? colorBase : colorBase + 'CC'
+      colorBase
     );
 
-    this.ctx.strokeStyle = seleccionado ? '#333' : colorBase;
-    this.ctx.lineWidth = seleccionado ? 3 : 2;
+    this.ctx.strokeStyle = colorBase;
+    this.ctx.lineWidth = 2;
     this.ctx.stroke();
 
+    // Línea inferior de estado
     this.ctx.fillStyle = colorEstado;
     this.ctx.fillRect(nodo.x + 2, nodo.y + nodo.alto - 4, nodo.ancho - 4, 3);
 
@@ -485,6 +513,7 @@ export class AnalyticsComponent implements OnInit {
     const maxWidth = nodo.ancho - 6;
     this.dibujarTextoEnvuelto(nodo.nombre, nodo.x + nodo.ancho / 2, nodo.y + 48, maxWidth);
 
+    // Icono de estado en esquina
     this.ctx.fillStyle = colorEstado;
     this.ctx.fillRect(nodo.x + nodo.ancho - 18, nodo.y, 18, 18);
     this.ctx.fillStyle = '#fff';
@@ -493,7 +522,8 @@ export class AnalyticsComponent implements OnInit {
       'pendiente': '⏳',
       'en_proceso': '▶️',
       'completado': '✓',
-      'rechazado': '✗'
+      'rechazado': '✗',
+      'observado': '⚠️'
     };
     this.ctx.textAlign = 'center';
     this.ctx.fillText(estadoIcons[nodo.estado] || '?', nodo.x + nodo.ancho - 9, nodo.y + 13);
@@ -537,201 +567,6 @@ export class AnalyticsComponent implements OnInit {
 
     for (let i = 0; i < Math.min(lineas.length, 2); i++) {
       this.ctx.fillText(lineas[i], x, y + i * 12);
-    }
-  }
-
-  // ===================== INTERACCIÓN MOUSE ======================
-
-  puntoEnNodo(x: number, y: number, nodo: Nodo): boolean {
-    return x >= nodo.x &&
-           x <= nodo.x + nodo.ancho &&
-           y >= nodo.y &&
-           y <= nodo.y + nodo.alto;
-  }
-
-  onMouseDown(e: MouseEvent): void {
-    const rect = this.canvas!.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    for (let nodo of this.nodos) {
-      if (this.puntoEnNodo(x, y, nodo)) {
-        this.nodoSeleccionado = nodo;
-        this.arrastrando = true;
-        this.offsetX = x - nodo.x;
-        this.offsetY = y - nodo.y;
-        this.dibujar();
-        break;
-      }
-    }
-  }
-
-  onMouseMove(e: MouseEvent): void {
-    if (this.arrastrando && this.nodoSeleccionado) {
-      const rect = this.canvas!.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      this.nodoSeleccionado.x = Math.max(0, Math.min(x - this.offsetX, this.canvas!.width - this.nodoSeleccionado.ancho));
-      this.nodoSeleccionado.y = Math.max(this.layoutInfo.paddingY, Math.min(y - this.offsetY, this.canvas!.height - this.nodoSeleccionado.alto));
-
-      this.dibujar();
-    }
-  }
-
-  onMouseUp(e?: MouseEvent): void {
-    this.arrastrando = false;
-  }
-
-  onClick(e: MouseEvent): void {
-    const rect = this.canvas!.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    this.nodoSeleccionado = null;
-    for (let nodo of this.nodos) {
-      if (this.puntoEnNodo(x, y, nodo)) {
-        this.nodoSeleccionado = nodo;
-        this.tramiteSeleccionado = nodo.idTramite;
-        this.dibujar();
-        break;
-      }
-    }
-  }
-
-  onDoubleClick(e: MouseEvent): void {
-    const rect = this.canvas!.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    for (let nodo of this.nodos) {
-      if (this.puntoEnNodo(x, y, nodo)) {
-        this.nodoEnEdicion = { ...nodo };
-        this.formularioNodo = { ...nodo };
-        this.modalAbierto = true;
-        return;
-      }
-    }
-  }
-
-  onKeyDown(e: KeyboardEvent): void {
-    if (e.key === 'Delete' && this.nodoSeleccionado) {
-      this.eliminarNodo();
-    }
-  }
-
-  // ===================== GESTIÓN DE NODOS ======================
-
-  agregarNodo(): void {
-    this.formularioNodo = this.crearNodoVacio();
-    this.nodoEnEdicion = null;
-    this.modalAbierto = true;
-  }
-
-  editarNodo(): void {
-    if (this.nodoSeleccionado) {
-      this.formularioNodo = { ...this.nodoSeleccionado };
-      this.nodoEnEdicion = this.nodoSeleccionado;
-      this.modalAbierto = true;
-    }
-  }
-
-  guardarNodo(): void {
-    if (this.formularioNodo.nombre) {
-      if (this.nodoEnEdicion) {
-        // Editar nodo existente
-        const idx = this.nodos.findIndex(n => n.id === this.nodoEnEdicion!.id);
-        if (idx >= 0) {
-          this.nodos[idx] = this.formularioNodo;
-          this.nodoSeleccionado = this.formularioNodo;
-        }
-      } else {
-        // Crear nuevo nodo
-        this.nodos.push(this.formularioNodo);
-      }
-      this.cerrarModal();
-      this.dibujar();
-    }
-  }
-
-  eliminarNodo(): void {
-    if (this.nodoSeleccionado) {
-      this.nodos = this.nodos.filter(n => n.id !== this.nodoSeleccionado!.id);
-      this.conexiones = this.conexiones.filter(
-        c => c.origen !== this.nodoSeleccionado!.id && c.destino !== this.nodoSeleccionado!.id
-      );
-      this.nodoSeleccionado = null;
-      this.dibujar();
-    }
-  }
-
-  cerrarModal(): void {
-    this.modalAbierto = false;
-    this.nodoEnEdicion = null;
-  }
-
-  // ===================== GESTIÓN DE CONEXIONES ======================
-
-  agregarConexion(): void {
-    this.nuevaConexion = {
-      origen: '',
-      destino: '',
-      etiqueta: '',
-      tipo: 'secuencial',
-      idTramite: this.tramiteSeleccionado
-    };
-    this.modalConexion = true;
-  }
-
-  guardarConexion(): void {
-    if (this.nuevaConexion.origen && this.nuevaConexion.destino) {
-      this.conexiones.push({
-        id: `c${Date.now()}`,
-        origen: this.nuevaConexion.origen,
-        destino: this.nuevaConexion.destino,
-        etiqueta: this.nuevaConexion.etiqueta,
-        tipo: this.nuevaConexion.tipo,
-        idTramite: this.nuevaConexion.idTramite
-      });
-      this.cerrarModalConexion();
-      this.dibujar();
-    }
-  }
-
-  eliminarConexion(id: string): void {
-    this.conexiones = this.conexiones.filter(c => c.id !== id);
-    this.dibujar();
-  }
-
-  cerrarModalConexion(): void {
-    this.modalConexion = false;
-  }
-
-  // ===================== EXPORTAR & FUNCIONES UTILIDAD ======================
-
-  exportarJSON(): void {
-    const data = {
-      departamentos: this.departamentos,
-      nodos: this.nodos,
-      conexiones: this.conexiones
-    };
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `diagrama-tramites-${new Date().getTime()}.json`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  }
-
-  limpiarDiagrama(): void {
-    if (confirm('¿Deseas limpiar todo el diagrama? Esta acción no se puede deshacer.')) {
-      this.nodos = [];
-      this.conexiones = [];
-      this.nodoSeleccionado = null;
-      this.tramiteSeleccionado = this.tramites[0];
-      this.dibujar();
     }
   }
 }

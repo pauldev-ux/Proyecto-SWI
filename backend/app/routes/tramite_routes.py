@@ -152,7 +152,7 @@ async def cambiar_estado(
 ):
     """Cambiar el estado de un trámite"""
     # Validar que el estado sea válido
-    estados_validos = ["solicitado", "en_proceso", "aceptado", "completado", "rechazado"]
+    estados_validos = ["solicitado", "en_proceso", "aceptado", "completado", "rechazado", "observado"]
     if nuevo_estado not in estados_validos:
         raise HTTPException(status_code=400, detail=f"Estado inválido. Debe ser uno de: {', '.join(estados_validos)}")
     
@@ -221,6 +221,48 @@ async def obtener_por_referencia(
         "usuario_asignado": tramite["usuario_asignado"],
         "fecha_creacion": tramite["fecha_creacion"],
         "fecha_actualizacion": tramite["fecha_actualizacion"]
+    }
+
+@router.get("/referencia/{referencia}/flujo")
+async def obtener_flujo_por_referencia(
+    referencia: str,
+    service: TramiteService = Depends(get_tramite_service)
+):
+    """Obtener el flujo de departamentos de un trámite por referencia"""
+    tramite = await service.obtener_por_referencia(referencia)
+    if not tramite:
+        raise HTTPException(status_code=404, detail="Trámite no encontrado")
+
+    ruta = tramite.get("ruta_departamentos") or []
+    departamento_actual = tramite.get("departamento")
+    pasos = []
+    indice_actual = ruta.index(departamento_actual) if departamento_actual in ruta else -1
+
+    for idx, dept in enumerate(ruta):
+        estado = 'pendiente'
+        if tramite.get('estado') == 'rechazado' and dept == departamento_actual:
+            estado = 'rechazado'
+        elif tramite.get('estado') == 'observado' and dept == departamento_actual:
+            estado = 'observado'
+        elif dept == departamento_actual:
+            estado = 'en_proceso'
+        elif indice_actual > idx:
+            estado = 'completado'
+
+        pasos.append({
+            'numero': idx + 1,
+            'departamento': dept,
+            'estado': estado,
+            'actual': dept == departamento_actual,
+            'completado': estado == 'completado'
+        })
+
+    return {
+        'referencia': tramite['referencia'],
+        'departamento_actual': departamento_actual,
+        'estado_actual': tramite['estado'],
+        'ruta_departamentos': ruta,
+        'pasos': pasos
     }
 
 @router.get("/departamento/{departamento}", response_model=List[TramiteSchema])
