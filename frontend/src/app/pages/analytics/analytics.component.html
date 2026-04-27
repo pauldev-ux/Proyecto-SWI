@@ -1,91 +1,138 @@
-<div class="analytics-container">
-  <section class="analytics-search-card">
-    <div class="search-card-header">
-      <div>
-        <p class="eyebrow">Analytics</p>
-        <h1>Consulta de Flujo de Trámite</h1>
-        <p class="search-description">Selecciona un trámite o ingresa su referencia para ver su flujo completo.</p>
+<div class="analytics-page">
+  <div class="analytics-header">
+    <div>
+      <span class="eyebrow">ANALYTICS</span>
+      <h1>Consulta de Flujo de Trámite</h1>
+      <p>
+        Selecciona un trámite y el sistema dibujará automáticamente su ruta real
+        por departamentos.
+      </p>
+    </div>
+  </div>
+
+  <div class="toolbar-card">
+    <div class="toolbar-grid">
+      <div class="field">
+        <label for="tramiteSelect">Seleccionar trámite</label>
+        <select
+          id="tramiteSelect"
+          name="tramiteSelect"
+          [(ngModel)]="referenciaSeleccionada"
+          (change)="onSeleccionRapidaChange()"
+        >
+          <option value="">— Elige un trámite —</option>
+          <option
+            *ngFor="let tramite of tramitesDisponibles; trackBy: trackByReferencia"
+            [value]="tramite.referencia"
+          >
+            {{ tramite.referencia }} - {{ tramite.cliente }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="referenciaInput">Buscar por referencia</label>
+        <div class="search-row">
+          <input
+            id="referenciaInput"
+            name="referenciaInput"
+            type="text"
+            [(ngModel)]="referenciaBusqueda"
+            placeholder="Ej. codigo 1"
+            (keyup.enter)="buscarTramite()"
+          />
+          <button type="button" class="primary-btn" (click)="buscarTramite()">
+            {{ cargando ? 'Buscando...' : 'Consultar' }}
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="search-card-body">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Seleccionar Trámite Rápido:</label>
-          <select class="input-search" (change)="onTramiteSeleccionado($event)">
-            <option value="">— Elija un trámite —</option>
-            <option *ngFor="let t of tramitesDisponibles" [value]="t.referencia">
-              {{ t.referencia }} - {{ t.cliente }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>O buscar por referencia manual:</label>
-          <div class="manual-search-row">
-            <input
-              type="text"
-              [(ngModel)]="referenciaBusqueda"
-              placeholder="Ej: TRM-2024-001"
-              class="input-search"
-              (keyup.enter)="buscarTramite()"
-            />
-            <button class="btn-primary" (click)="buscarTramite()" [disabled]="cargando">
-              {{ cargando ? 'Buscando...' : 'Consultar' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div *ngIf="error" class="alert alert-error">
-        {{ error }}
-      </div>
-
-      <div *ngIf="tramiteActual" class="search-result-card">
-        <div class="result-label">Resumen del trámite</div>
-        <div class="result-row"><strong>Referencia:</strong> {{ tramiteActual.referencia }}</div>
-        <div class="result-row"><strong>Asunto:</strong> {{ tramiteActual.asunto }}</div>
-        <div class="result-row"><strong>Solicitante:</strong> {{ tramiteActual.cliente }}</div>
-        <div class="result-row"><strong>Departamento actual:</strong> <span class="badge badge-current">{{ tramiteActual.departamento || 'Sin asignar' }}</span></div>
-        <div class="result-row"><strong>Estado actual:</strong> <span class="badge" [style.background-color]="obtenerColorPaso(tramiteActual.estado)">{{ obtenerEstadoBadge(tramiteActual.estado) }}</span></div>
-        <div class="result-row" *ngIf="siguienteDepartamento"><strong>Siguiente departamento:</strong> <span class="badge badge-next">{{ siguienteDepartamento }}</span></div>
-      </div>
+    <div *ngIf="error" class="error-box">
+      {{ error }}
     </div>
-  </section>
+  </div>
 
-  <section *ngIf="tramiteActual && departamentos.length > 0" class="diagram-section">
-    <div class="diagram-card">
-      <div class="diagram-card-header">
+  <ng-container *ngIf="tramiteActual as tramite">
+    <div class="summary-card">
+      <div class="summary-head">
         <div>
-          <div class="diagram-tag">Diagrama automático</div>
-          <h2>Flujo del trámite</h2>
-          <p class="diagram-description">El sistema dibuja automáticamente los departamentos y conexiones según la ruta del trámite.</p>
+          <span class="eyebrow">TRÁMITE SELECCIONADO</span>
+          <h2>{{ tramite.referencia }}</h2>
+        </div>
+
+        <div class="summary-badges">
+          <span class="badge" [ngClass]="obtenerClaseEstado(tramite.estado)">
+            {{ obtenerEstadoBadge(tramite.estado) }}
+          </span>
         </div>
       </div>
 
-      <div class="diagram-body">
-        <div class="canvas-wrapper">
-          <canvas #canvas class="canvas-editor"></canvas>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span class="label">Asunto</span>
+          <strong>{{ tramite.asunto }}</strong>
         </div>
-        <div class="diagram-legend">
-          <div class="legend-item">
-            <span class="legend-dot legend-completado"></span>
-            <span>Completado</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot legend-actual"></span>
-            <span>Actual</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot legend-pendiente"></span>
-            <span>Pendiente</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot legend-observado"></span>
-            <span>Observado / Rechazado</span>
-          </div>
+
+        <div class="summary-item">
+          <span class="label">Solicitante</span>
+          <strong>{{ tramite.cliente }}</strong>
+        </div>
+
+        <div class="summary-item">
+          <span class="label">Departamento actual</span>
+          <strong>{{ tramite.departamento || 'Sin asignar' }}</strong>
+        </div>
+
+        <div class="summary-item">
+          <span class="label">Siguiente departamento</span>
+          <strong>{{ siguienteDepartamento }}</strong>
         </div>
       </div>
     </div>
-  </section>
+
+    <div class="diagram-card">
+      <div class="diagram-title-row">
+        <div>
+          <span class="eyebrow">DIAGRAMA AUTOMÁTICO</span>
+          <h2>Flujo del trámite</h2>
+          <p>
+            Se muestran solo las direcciones por las que pasa este trámite.
+          </p>
+        </div>
+
+        <div class="legend">
+          <span class="legend-item">
+            <i class="legend-dot dot-green"></i> Completado
+          </span>
+          <span class="legend-item">
+            <i class="legend-dot dot-blue"></i> Actual
+          </span>
+          <span class="legend-item">
+            <i class="legend-dot dot-gray"></i> Pendiente
+          </span>
+          <span class="legend-item">
+            <i class="legend-dot dot-yellow"></i> Observado
+          </span>
+          <span class="legend-item">
+            <i class="legend-dot dot-red"></i> Rechazado
+          </span>
+        </div>
+      </div>
+
+      <div class="canvas-shell">
+        <canvas
+          #diagramCanvas
+          (mousedown)="onMouseDown($event)"
+          (mousemove)="onMouseMove($event)"
+          (mouseup)="onMouseUp()"
+          (mouseleave)="onMouseLeave()"
+        ></canvas>
+      </div>
+    </div>
+  </ng-container>
+
+  <div *ngIf="!tramiteActual && !cargando" class="empty-card">
+    Selecciona un trámite para ver su diagrama.
+  </div>
 </div>
