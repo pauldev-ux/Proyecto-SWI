@@ -13,25 +13,29 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   canActivate(
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot
-  ): boolean {
-    const token = this.usuarioService.obtenerToken();
-    const usuario = this.usuarioService.obtenerUsuarioActualValue();
-    const allowedRoles: string[] = (route.data?.['roles'] as string[]) || [];
+  route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot
+): boolean {
+  const token = this.usuarioService.obtenerToken();
+  const usuario = this.usuarioService.obtenerUsuarioActualValue();
+  const allowedRoles: string[] = (route.data?.['roles'] as string[]) || [];
 
-    if (!token) {
-      this.router.navigate(['/login']);
+  if (!token) {
+    this.router.navigate(['/login']);
+    return false;
+  }
+
+  if (allowedRoles.length > 0) {
+    if (!usuario || !allowedRoles.includes(usuario.rol)) {
+      if (usuario?.rol === 'cliente') {
+        this.router.navigate(['/analytics']);
+      } else {
+        this.router.navigate(['/dashboard']);
+      }
       return false;
     }
+  }
 
-    if (allowedRoles.length > 0) {
-      if (!usuario || !allowedRoles.includes(usuario.rol)) {
-        this.router.navigate(['/dashboard']);
-        return false;
-      }
-    }
-
-    return true;
+  return true;
   }
 }

@@ -61,11 +61,14 @@ export class LoginComponent implements OnInit {
     this.error = null;
     this.deshabilitarFormularios();
 
+    
+
     const { username, contraseña } = this.formularioLogin.getRawValue();
 
     this.usuarioService.login(username, contraseña).subscribe({
       next: () => {
-        this.router.navigate(['/dashboard']);
+        //this.router.navigate(['/dashboard']);
+        this.redirigirSegunRol();
       },
       error: (err) => {
         this.cargando = false;
@@ -102,7 +105,8 @@ export class LoginComponent implements OnInit {
         // Auto login después del registro
         this.usuarioService.login(username, contraseña).subscribe({
           next: () => {
-            this.router.navigate(['/dashboard']);
+            //this.router.navigate(['/dashboard']);
+            this.redirigirSegunRol();
           },
           error: () => {
             this.cargando = false;
@@ -129,4 +133,15 @@ export class LoginComponent implements OnInit {
       this.formularioRegistro.reset();
     }
   }
+
+  private redirigirSegunRol(): void {
+  const usuario = this.usuarioService.obtenerUsuarioActualValue();
+
+  if (usuario?.rol === 'cliente') {
+    this.router.navigate(['/analytics']);
+    return;
+  }
+
+  this.router.navigate(['/dashboard']);
+}
 }

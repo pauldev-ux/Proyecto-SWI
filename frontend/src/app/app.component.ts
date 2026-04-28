@@ -32,6 +32,7 @@ export class AppComponent implements OnInit {
     if (!this.usuarioActual) {
       return '';
     }
+
     switch (this.usuarioActual.rol) {
       case 'admin':
         return 'Administrador';
@@ -44,12 +45,22 @@ export class AppComponent implements OnInit {
     }
   }
 
+  puedeVerDashboard(): boolean {
+    return this.usuarioActual?.rol === 'admin' || this.usuarioActual?.rol === 'funcionario';
+  }
+
+  puedeVerTramites(): boolean {
+    return this.usuarioActual?.rol === 'admin' || this.usuarioActual?.rol === 'funcionario';
+  }
+
   puedeVerMonitor(): boolean {
     return this.usuarioActual?.rol === 'admin' || this.usuarioActual?.rol === 'funcionario';
   }
 
   puedeVerAnalytics(): boolean {
-    return this.usuarioActual?.rol === 'admin' || this.usuarioActual?.rol === 'funcionario';
+    return this.usuarioActual?.rol === 'admin'
+      || this.usuarioActual?.rol === 'funcionario'
+      || this.usuarioActual?.rol === 'cliente';
   }
 
   puedeVerDepartamentos(): boolean {
