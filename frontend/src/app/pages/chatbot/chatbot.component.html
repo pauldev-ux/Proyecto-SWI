@@ -1,0 +1,104 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Asistente IA para Trámites</h1>
+    <p>Crea trámites usando lenguaje natural. La IA validará la información y te pedirá confirmación.</p>
+  </div>
+
+  <div class="chatbot-layout">
+    <!-- Panel de Chat -->
+    <div class="chat-panel">
+      <div class="chat-history">
+        <div *ngFor="let msg of mensajes" class="message" [ngClass]="msg.tipo">
+          <div class="message-bubble">
+            <p>{{ msg.texto }}</p>
+          </div>
+        </div>
+        
+        <!-- Indicador de carga -->
+        <div class="message ia loading" *ngIf="cargando">
+          <div class="message-bubble">
+            <div class="typing-indicator">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <textarea 
+          [(ngModel)]="mensajeActual" 
+          (keyup.enter)="enviarMensaje($event)"
+          placeholder="Ej: Crea un trámite para el solicitante jperez que pase por Finanzas y Legal..."
+          [disabled]="cargando || borradorPendiente !== null"
+        ></textarea>
+        <button class="btn btn-primary btn-send" 
+                (click)="enviarMensaje()" 
+                [disabled]="!mensajeActual.trim() || cargando || borradorPendiente !== null">
+          Enviar 🚀
+        </button>
+      </div>
+    </div>
+
+    <!-- Panel de Vista Previa -->
+    <div class="preview-panel" *ngIf="borradorPendiente">
+      <h2>Vista Previa del Trámite</h2>
+      
+      <div class="alert alert-warning" *ngIf="borradorPendiente.faltantes.length > 0">
+        <strong>Faltan datos o hay errores:</strong>
+        <ul>
+          <li *ngFor="let f of borradorPendiente.faltantes">{{ f }}</li>
+        </ul>
+        <p>Por favor, aclara estos puntos en el chat.</p>
+      </div>
+
+      <div class="preview-card">
+        <div class="preview-item">
+          <span class="label">Acción:</span>
+          <span class="value badge badge-info">{{ borradorPendiente.accion | uppercase }}</span>
+        </div>
+        
+        <div class="preview-item">
+          <span class="label">Solicitante:</span>
+          <span class="value" [class.error]="!borradorPendiente.solicitante_id">
+            {{ borradorPendiente.solicitante_id || 'Falta especificar' }}
+          </span>
+        </div>
+
+        <div class="preview-item">
+          <span class="label">Prioridad:</span>
+          <span class="value badge" [ngClass]="'badge-' + borradorPendiente.prioridad">
+            {{ borradorPendiente.prioridad }}
+          </span>
+        </div>
+
+        <div class="preview-item">
+          <span class="label">Ruta de Departamentos:</span>
+          <div class="route-timeline" *ngIf="borradorPendiente.ruta_departamentos.length > 0">
+            <span *ngFor="let dep of borradorPendiente.ruta_departamentos; let last = last">
+              {{ dep }} <span *ngIf="!last" class="arrow">➔</span>
+            </span>
+          </div>
+          <span class="value error" *ngIf="borradorPendiente.ruta_departamentos.length === 0">
+            Falta especificar
+          </span>
+        </div>
+
+        <div class="preview-item">
+          <span class="label">Asunto:</span>
+          <span class="value">{{ borradorPendiente.asunto || 'Generado por Asistente IA' }}</span>
+        </div>
+      </div>
+
+      <div class="preview-actions">
+        <button class="btn btn-secondary" (click)="cancelarBorrador()" [disabled]="creandoTramite">
+          Cancelar
+        </button>
+        <button class="btn btn-success" 
+                (click)="confirmarCreacion()" 
+                [disabled]="!borradorPendiente.requiere_confirmacion || borradorPendiente.faltantes.length > 0 || creandoTramite">
+          {{ creandoTramite ? 'Creando...' : 'Confirmar Creación' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

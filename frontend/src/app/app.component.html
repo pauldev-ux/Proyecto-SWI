@@ -31,6 +31,10 @@
             <span class="menu-icon">📝</span>
             <span class="menu-text" *ngIf="sidebarAbierto">Trámites</span>
           </a>
+          <a routerLink="/chatbot" routerLinkActive="active" class="menu-item" *ngIf="puedeVerAsistente()">
+            <span class="menu-icon">🤖</span>
+            <span class="menu-text" *ngIf="sidebarAbierto">Asistente IA</span>
+          </a>
           <a routerLink="/departamentos" routerLinkActive="active" class="menu-item" *ngIf="puedeVerDepartamentos()">
             <span class="menu-icon">🏢</span>
             <span class="menu-text" *ngIf="sidebarAbierto">Departamentos</span>

@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Sistema de Gestión de Políticas de Negocio"
     
+    # OpenAI
+    OPENAI_API_KEY: Optional[str] = None
+    
     class Config:
         env_file = ".env"
 

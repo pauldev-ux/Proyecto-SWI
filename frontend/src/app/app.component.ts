@@ -56,6 +56,10 @@ export class AppComponent implements OnInit {
     return this.usuarioActual?.rol === 'admin';
   }
 
+  puedeVerAsistente(): boolean {
+    return this.usuarioActual?.rol === 'admin';
+  }
+
   puedeVerUsuarios(): boolean {
     return this.usuarioActual?.rol === 'admin';
   }

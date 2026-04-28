@@ -38,6 +38,12 @@ const routes: Routes = [
     loadChildren: () => import('./pages/usuarios/usuarios.module').then(m => m.UsuariosModule),
     canActivate: [AuthGuard],
     data: { roles: ['admin'] }
+  },
+  { 
+    path: 'chatbot', 
+    loadChildren: () => import('./pages/chatbot/chatbot.module').then(m => m.ChatbotModule),
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] }
   }
 ];
 

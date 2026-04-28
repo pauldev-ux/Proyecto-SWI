@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database.connection import connect_to_mongo, disconnect_from_mongo
-from app.routes import usuario_routes, tramite_routes, departamento_routes, dashboard_routes
+from app.routes import usuario_routes, tramite_routes, departamento_routes, dashboard_routes, chatbot_routes
 from app.services.usuario_service import UsuarioService
 from app.database.connection import get_db
 
@@ -73,6 +73,7 @@ app.include_router(usuario_routes.router, prefix=settings.API_V1_STR)
 app.include_router(tramite_routes.router, prefix=settings.API_V1_STR)
 app.include_router(departamento_routes.router, prefix=settings.API_V1_STR)
 app.include_router(dashboard_routes.router, prefix=settings.API_V1_STR)
+app.include_router(chatbot_routes.router, prefix=settings.API_V1_STR)
 
 # Ruta raíz
 @app.get("/")
