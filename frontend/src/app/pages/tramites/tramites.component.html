@@ -6,12 +6,8 @@
         Estás viendo solo los trámites del departamento:
         <strong>{{ usuarioActual?.departamento }}</strong>
       </p>
-      <p *ngIf="esAdmin()">
-        Estás viendo todos los trámites del sistema.
-      </p>
-      <p *ngIf="esCliente()">
-        Estás viendo tus propios trámites.
-      </p>
+      <p *ngIf="esAdmin()">Estás viendo todos los trámites del sistema.</p>
+      <p *ngIf="esCliente()">Estás viendo tus propios trámites.</p>
     </div>
 
     <button
@@ -42,9 +38,6 @@
       <div class="form-group">
         <label>Referencia *</label>
         <input type="text" formControlName="referencia" />
-        <small *ngIf="formulario.get('referencia')?.invalid && formulario.get('referencia')?.touched">
-          La referencia es requerida
-        </small>
       </div>
 
       <div class="form-group">
@@ -55,27 +48,11 @@
             {{ cliente.nombre }} ({{ cliente.username }})
           </option>
         </select>
-        <small *ngIf="formulario.get('cliente')?.invalid && formulario.get('cliente')?.touched">
-          Debe seleccionar un cliente
-        </small>
       </div>
 
       <div class="form-group full-width">
         <label>Asunto *</label>
         <textarea rows="3" formControlName="asunto"></textarea>
-        <small *ngIf="formulario.get('asunto')?.invalid && formulario.get('asunto')?.touched">
-          El asunto es requerido
-        </small>
-      </div>
-
-      <div class="form-group">
-        <label>Departamento inicial</label>
-        <select formControlName="departamento">
-          <option value="">— Seleccionar —</option>
-          <option *ngFor="let dept of departamentos" [value]="dept.nombre">
-            {{ dept.nombre }}
-          </option>
-        </select>
       </div>
 
       <div class="form-group">
@@ -85,14 +62,74 @@
         </select>
       </div>
 
+      <div class="form-group">
+        <label>Departamento inicial</label>
+        <input
+          type="text"
+          formControlName="departamento"
+          readonly
+          placeholder="Se define por el primer elemento de la ruta"
+        />
+        <small>El primer departamento de la ruta será el inicial.</small>
+      </div>
+
       <div class="form-group full-width">
-        <label>Flujo de departamentos</label>
-        <select formControlName="ruta_departamentos" multiple size="6">
-          <option *ngFor="let dept of departamentos" [ngValue]="dept.nombre">
-            {{ dept.nombre }}
-          </option>
-        </select>
-        <small>Mantén Ctrl (Cmd en Mac) para seleccionar múltiples departamentos</small>
+        <label>Agregar departamento a la ruta</label>
+
+        <div class="ruta-picker-row">
+          <select [(ngModel)]="departamentoDisponibleSeleccionado" [ngModelOptions]="{ standalone: true }">
+            <option value="">— Seleccionar departamento —</option>
+            <option *ngFor="let dept of departamentos" [value]="dept.nombre">
+              {{ dept.nombre }}
+            </option>
+          </select>
+
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="agregarDepartamentoARuta()"
+          >
+            Agregar
+          </button>
+        </div>
+
+        <small>
+          Agrega los departamentos en el orden exacto por el que debe pasar el trámite.
+        </small>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Ruta ordenada del trámite</label>
+
+        <div *ngIf="rutaSeleccionada.length === 0" class="ruta-vacia">
+          Aún no agregaste departamentos a la ruta.
+        </div>
+
+        <div *ngIf="rutaSeleccionada.length > 0" class="ruta-ordenada">
+          <div class="ruta-item" *ngFor="let depto of rutaSeleccionada; let i = index">
+            <div class="ruta-item-left">
+              <span class="ruta-index">{{ i + 1 }}</span>
+              <span class="ruta-nombre">{{ depto }}</span>
+            </div>
+
+            <div class="ruta-item-actions">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="moverDepartamentoArriba(i)">
+                ↑
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="moverDepartamentoAbajo(i)">
+                ↓
+              </button>
+              <button type="button" class="btn btn-delete btn-sm" (click)="quitarDepartamentoDeRuta(i)">
+                Quitar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="rutaSeleccionada.length > 0" class="ruta-preview">
+          <strong>Orden final:</strong>
+          {{ rutaSeleccionada.join(' → ') }}
+        </div>
       </div>
 
       <div class="form-actions full-width">
@@ -164,19 +201,13 @@
               <td>{{ tramite.departamento || '—' }}</td>
               <td>{{ obtenerDepartamentoSiguiente(tramite) }}</td>
               <td>
-                <span
-                  class="badge"
-                  [style.background]="obtenerColorEstado(tramite.estado)"
-                >
+                <span class="badge" [style.background]="obtenerColorEstado(tramite.estado)">
                   {{ tramite.estado | titlecase }}
                 </span>
               </td>
               <td class="ruta-texto">{{ obtenerRutaTexto(tramite) }}</td>
               <td>
-                <span
-                  class="badge"
-                  [style.background]="obtenerColorPrioridad(tramite.prioridad)"
-                >
+                <span class="badge" [style.background]="obtenerColorPrioridad(tramite.prioridad)">
                   {{ tramite.prioridad | titlecase }}
                 </span>
               </td>

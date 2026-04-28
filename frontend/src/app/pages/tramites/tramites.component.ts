@@ -26,9 +26,11 @@ export class TramitesComponent implements OnInit {
 
   busqueda = '';
   filtroEstado = '';
-  filtrosAbiertos = false;
 
   usuarioActual: Usuario | null = null;
+
+  rutaSeleccionada: string[] = [];
+  departamentoDisponibleSeleccionado = '';
 
   estados: Tramite['estado'][] = [
     'solicitado',
@@ -196,6 +198,8 @@ export class TramitesComponent implements OnInit {
     this.mostrarFormulario = true;
     this.editando = false;
     this.tramiteEditandoId = null;
+    this.rutaSeleccionada = [];
+    this.departamentoDisponibleSeleccionado = '';
 
     this.formulario.reset({
       referencia: '',
@@ -212,6 +216,9 @@ export class TramitesComponent implements OnInit {
 
   cerrarFormulario(): void {
     this.mostrarFormulario = false;
+    this.rutaSeleccionada = [];
+    this.departamentoDisponibleSeleccionado = '';
+
     this.formulario.reset({
       referencia: '',
       cliente: '',
@@ -220,8 +227,74 @@ export class TramitesComponent implements OnInit {
       ruta_departamentos: [],
       prioridad: 'normal'
     });
+
     this.error = null;
     this.exito = null;
+  }
+
+  agregarDepartamentoARuta(): void {
+    const depto = (this.departamentoDisponibleSeleccionado || '').trim();
+
+    if (!depto) {
+      return;
+    }
+
+    if (this.rutaSeleccionada.includes(depto)) {
+      this.error = 'Ese departamento ya fue agregado a la ruta';
+      return;
+    }
+
+    this.rutaSeleccionada.push(depto);
+    this.departamentoDisponibleSeleccionado = '';
+    this.sincronizarRutaEnFormulario();
+    this.error = null;
+  }
+
+  quitarDepartamentoDeRuta(index: number): void {
+    if (index < 0 || index >= this.rutaSeleccionada.length) {
+      return;
+    }
+
+    this.rutaSeleccionada.splice(index, 1);
+    this.sincronizarRutaEnFormulario();
+  }
+
+  moverDepartamentoArriba(index: number): void {
+    if (index <= 0) {
+      return;
+    }
+
+    [this.rutaSeleccionada[index - 1], this.rutaSeleccionada[index]] = [
+      this.rutaSeleccionada[index],
+      this.rutaSeleccionada[index - 1]
+    ];
+
+    this.sincronizarRutaEnFormulario();
+  }
+
+  moverDepartamentoAbajo(index: number): void {
+    if (index < 0 || index >= this.rutaSeleccionada.length - 1) {
+      return;
+    }
+
+    [this.rutaSeleccionada[index], this.rutaSeleccionada[index + 1]] = [
+      this.rutaSeleccionada[index + 1],
+      this.rutaSeleccionada[index]
+    ];
+
+    this.sincronizarRutaEnFormulario();
+  }
+
+  sincronizarRutaEnFormulario(): void {
+    const departamentoInicial = this.rutaSeleccionada.length > 0 ? this.rutaSeleccionada[0] : '';
+
+    this.formulario.patchValue(
+      {
+        ruta_departamentos: [...this.rutaSeleccionada],
+        departamento: departamentoInicial
+      },
+      { emitEvent: false }
+    );
   }
 
   guardar(): void {
@@ -235,10 +308,21 @@ export class TramitesComponent implements OnInit {
       return;
     }
 
+    if (this.rutaSeleccionada.length === 0) {
+      this.error = 'Debes agregar al menos un departamento a la ruta del trámite';
+      return;
+    }
+
     this.cargando = true;
     this.limpiarMensajes(false);
 
-    const datos = this.formulario.value;
+    const datosFormulario = this.formulario.getRawValue();
+
+    const datos: Tramite = {
+      ...datosFormulario,
+      departamento: this.rutaSeleccionada[0],
+      ruta_departamentos: [...this.rutaSeleccionada]
+    };
 
     if (this.editando && this.tramiteEditandoId) {
       this.tramiteService.actualizar(this.tramiteEditandoId, datos).subscribe({
@@ -276,13 +360,15 @@ export class TramitesComponent implements OnInit {
 
     this.editando = true;
     this.tramiteEditandoId = tramite.id || null;
+    this.rutaSeleccionada = [...(tramite.ruta_departamentos || [])];
+    this.departamentoDisponibleSeleccionado = '';
 
     this.formulario.patchValue({
       referencia: tramite.referencia,
       cliente: tramite.cliente,
       asunto: tramite.asunto,
       departamento: tramite.departamento || '',
-      ruta_departamentos: tramite.ruta_departamentos || [],
+      ruta_departamentos: [...this.rutaSeleccionada],
       prioridad: tramite.prioridad
     });
 
@@ -330,11 +416,7 @@ export class TramitesComponent implements OnInit {
       observado: 'observado'
     };
 
-    if (
-      !confirm(
-        `¿Deseas marcar el trámite ${tramite.referencia} como ${textos[nuevoEstado]}?`
-      )
-    ) {
+    if (!confirm(`¿Deseas marcar el trámite ${tramite.referencia} como ${textos[nuevoEstado]}?`)) {
       return;
     }
 
@@ -344,6 +426,7 @@ export class TramitesComponent implements OnInit {
     this.tramiteService.cambiarEstado(tramite.id, nuevoEstado).subscribe({
       next: () => {
         const siguiente = this.obtenerDepartamentoSiguiente(tramite);
+
         if (nuevoEstado === 'aceptado') {
           this.exito =
             siguiente !== 'Ninguno'
@@ -369,7 +452,6 @@ export class TramitesComponent implements OnInit {
 
   aplicarFiltros(): void {
     this.cargarTramites();
-    this.filtrosAbiertos = false;
   }
 
   limpiarFiltros(): void {
